@@ -1,0 +1,12 @@
+# Java编译目录
+target/
+*.class
+*.jar
+
+# 前端依赖
+student-frontend/node_modules/
+
+# IDE缓存
+.idea/
+.vscode/
+*.log

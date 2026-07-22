@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.student.mapper.StudentMapper">
+
+    <resultMap id="StudentResultMap" type="com.example.student.entity.Student">
+        <id property="id" column="id"/>
+        <result property="studentNo" column="student_no"/>
+        <result property="name" column="name"/>
+        <result property="gender" column="gender"/>
+        <result property="birthday" column="birthday"/>
+        <result property="phone" column="phone"/>
+        <result property="address" column="address"/>
+        <result property="clazzId" column="clazz_id"/>
+        <result property="userId" column="user_id"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="clazzName" column="clazz_name"/>
+    </resultMap>
+
+    <select id="selectStudentPage" resultMap="StudentResultMap">
+        SELECT s.*, c.clazz_name
+        FROM student s
+        LEFT JOIN clazz c ON s.clazz_id = c.id
+        WHERE s.deleted = 0
+        <if test="name != null and name != ''">
+            AND s.name LIKE CONCAT('%', #{name}, '%')
+        </if>
+        <if test="studentNo != null and studentNo != ''">
+            AND s.student_no LIKE CONCAT('%', #{studentNo}, '%')
+        </if>
+        <if test="clazzId != null">
+            AND s.clazz_id = #{clazzId}
+        </if>
+        ORDER BY s.id DESC
+    </select>
+
+</mapper>
