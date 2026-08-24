@@ -36,3 +36,29 @@ export function deleteTeacher(id) {
     method: 'delete'
   })
 }
+
+export function exportTeacher(params) {
+  return request({
+    url: '/teacher/export',
+    method: 'get',
+    params,
+    responseType: 'blob'
+  })
+}
+
+export function importTeacher(data) {
+  return request({
+    url: '/teacher/import',
+    method: 'post',
+    data
+  })
+}
+
+export function exportTeacherImportFail(data) {
+  return request({
+    url: '/teacher/import-fail-export',
+    method: 'post',
+    data,
+    responseType: 'blob'
+  })
+}

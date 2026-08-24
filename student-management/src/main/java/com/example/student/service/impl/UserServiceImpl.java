@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.student.entity.User;
 import com.example.student.exception.BusinessException;
 import com.example.student.mapper.UserMapper;
+import com.example.student.security.RedisTokenService;
 import com.example.student.service.UserService;
 import com.example.student.utils.JwtUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +24,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     @Autowired
     private JwtUtils jwtUtils;
 
+    @Autowired
+    private RedisTokenService redisTokenService;
+
     @Override
     public Map<String, Object> login(String username, String password) {
         User user = getByUsername(username);
@@ -35,9 +39,15 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         if (!passwordEncoder.matches(password, user.getPassword())) {
             throw new BusinessException("密码错误");
         }
-        String token = jwtUtils.generateToken(user.getId(), user.getUsername(), user.getRole());
+        String accessToken = jwtUtils.generateAccessToken(user.getId(), user.getUsername(), user.getRole());
+        String refreshToken = jwtUtils.generateRefreshToken(user.getId(), user.getUsername(), user.getRole());
+        // 记录刷新令牌，便于登出吊销与刷新校验
+        redisTokenService.storeRefreshToken(user.getId(), jwtUtils.getJtiFromToken(refreshToken),
+                jwtUtils.getRefreshExpireSeconds());
+
         Map<String, Object> result = new HashMap<>();
-        result.put("token", token);
+        result.put("token", accessToken);
+        result.put("refreshToken", refreshToken);
         result.put("userId", user.getId());
         result.put("username", user.getUsername());
         result.put("realName", user.getRealName());

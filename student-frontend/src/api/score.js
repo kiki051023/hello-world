@@ -45,3 +45,29 @@ export function getScoreStats(params) {
     params
   })
 }
+
+export function exportScore(params) {
+  return request({
+    url: '/score/export',
+    method: 'get',
+    params,
+    responseType: 'blob'
+  })
+}
+
+export function importScore(data) {
+  return request({
+    url: '/score/import',
+    method: 'post',
+    data
+  })
+}
+
+export function exportScoreImportFail(data) {
+  return request({
+    url: '/score/import-fail-export',
+    method: 'post',
+    data,
+    responseType: 'blob'
+  })
+}

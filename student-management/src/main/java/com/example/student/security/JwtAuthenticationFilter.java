@@ -10,6 +10,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
@@ -21,22 +22,41 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Autowired
     private JwtUtils jwtUtils;
 
+    @Autowired
+    private RedisTokenService redisTokenService;
+
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
-        String token = request.getHeader("Authorization");
-        if (token != null && token.startsWith("Bearer ")) {
-            token = token.substring(7);
-            if (jwtUtils.validateToken(token)) {
-                String username = jwtUtils.getUsernameFromToken(token);
-                String role = jwtUtils.getRoleFromToken(token);
-                SimpleGrantedAuthority authority = new SimpleGrantedAuthority("ROLE_" + role);
-                UsernamePasswordAuthenticationToken authentication =
-                        new UsernamePasswordAuthenticationToken(username, null,
-                                Collections.singletonList(authority));
-                SecurityContextHolder.getContext().setAuthentication(authentication);
+        String token = parseBearerToken(request);
+        if (StringUtils.hasText(token) && jwtUtils.validateToken(token)) {
+            // 刷新令牌不可作为访问凭据
+            if (!JwtUtils.TOKEN_TYPE_ACCESS.equals(jwtUtils.getTypeFromToken(token))) {
+                filterChain.doFilter(request, response);
+                return;
             }
+            // 已登出/吊销的访问令牌视为无效
+            String jti = jwtUtils.getJtiFromToken(token);
+            if (jti != null && redisTokenService.isBlacklisted(jti)) {
+                filterChain.doFilter(request, response);
+                return;
+            }
+            String username = jwtUtils.getUsernameFromToken(token);
+            String role = jwtUtils.getRoleFromToken(token);
+            SimpleGrantedAuthority authority = new SimpleGrantedAuthority("ROLE_" + role);
+            UsernamePasswordAuthenticationToken authentication =
+                    new UsernamePasswordAuthenticationToken(username, null,
+                            Collections.singletonList(authority));
+            SecurityContextHolder.getContext().setAuthentication(authentication);
         }
         filterChain.doFilter(request, response);
+    }
+
+    private String parseBearerToken(HttpServletRequest request) {
+        String header = request.getHeader("Authorization");
+        if (StringUtils.hasText(header) && header.startsWith("Bearer ")) {
+            return header.substring(7);
+        }
+        return null;
     }
 }

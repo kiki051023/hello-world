@@ -81,6 +81,7 @@ async function handleLogin() {
       try {
         const res = await login(loginForm.value)
         userStore.setToken(res.data.token)
+        userStore.setRefreshToken(res.data.refreshToken)
         userStore.setUserInfo({
           userId: res.data.userId,
           username: res.data.username,

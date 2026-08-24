@@ -12,29 +12,9 @@
         text-color="#a6adb4"
         active-text-color="#ffffff"
       >
-        <el-menu-item index="/dashboard">
-          <el-icon><HomeFilled /></el-icon>
-          <span>首页</span>
-        </el-menu-item>
-        <el-menu-item index="/student">
-          <el-icon><User /></el-icon>
-          <span>学生管理</span>
-        </el-menu-item>
-        <el-menu-item index="/clazz">
-          <el-icon><OfficeBuilding /></el-icon>
-          <span>班级管理</span>
-        </el-menu-item>
-        <el-menu-item index="/course">
-          <el-icon><Reading /></el-icon>
-          <span>课程管理</span>
-        </el-menu-item>
-        <el-menu-item index="/score">
-          <el-icon><DataAnalysis /></el-icon>
-          <span>成绩管理</span>
-        </el-menu-item>
-        <el-menu-item index="/teacher">
-          <el-icon><Avatar /></el-icon>
-          <span>教师管理</span>
+        <el-menu-item v-for="m in visibleMenus" :key="m.index" :index="m.index">
+          <el-icon><component :is="m.icon" /></el-icon>
+          <span>{{ m.title }}</span>
         </el-menu-item>
       </el-menu>
     </el-aside>
@@ -76,6 +56,15 @@ import { computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/store/user'
 import { ElMessageBox } from 'element-plus'
+import {
+  HomeFilled,
+  User,
+  OfficeBuilding,
+  Reading,
+  DataAnalysis,
+  Avatar,
+  TrendCharts
+} from '@element-plus/icons-vue'
 import { logout } from '@/api/auth'
 
 const route = useRoute()
@@ -84,6 +73,21 @@ const userStore = useUserStore()
 
 const activeMenu = computed(() => route.path)
 const currentTitle = computed(() => route.meta.title || '')
+
+// 菜单与角色映射：与后端 @PreAuthorize 保持一致
+const allMenus = [
+  { index: '/dashboard', title: '首页', icon: HomeFilled, roles: ['ADMIN', 'TEACHER', 'STUDENT'] },
+  { index: '/student', title: '学生管理', icon: User, roles: ['ADMIN', 'TEACHER'] },
+  { index: '/clazz', title: '班级管理', icon: OfficeBuilding, roles: ['ADMIN', 'TEACHER'] },
+  { index: '/course', title: '课程管理', icon: Reading, roles: ['ADMIN', 'TEACHER'] },
+  { index: '/score', title: '成绩管理', icon: DataAnalysis, roles: ['ADMIN', 'TEACHER', 'STUDENT'] },
+  { index: '/analysis', title: '成绩分析', icon: TrendCharts, roles: ['ADMIN', 'TEACHER', 'STUDENT'] },
+  { index: '/teacher', title: '教师管理', icon: Avatar, roles: ['ADMIN'] }
+]
+
+const visibleMenus = computed(() =>
+  allMenus.filter((m) => m.roles.includes(userStore.role))
+)
 
 onMounted(() => {
   userStore.loadUserInfo()

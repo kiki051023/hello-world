@@ -1,18 +1,35 @@
-# Build and Release Folders
-bin-debug/
-bin-release/
-[Oo]bj/
-[Bb]in/
+# ===== IDE / Editor =====
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+*.swp
+*.swo
 
-# Other files and folders
-.settings/
+# ===== OS =====
+.DS_Store
+Thumbs.db
+desktop.ini
 
-# Executables
-*.swf
-*.air
-*.ipa
-*.apk
+# ===== Java / Maven 后端 =====
+student-management/target/
+*.class
+hs_err_pid*
 
-# Project files, i.e. `.project`, `.actionScriptProperties` and `.flexProperties`
-# should NOT be excluded as they contain compiler settings and other important
-# information for Eclipse / Flash Builder.
+# ===== Node / 前端 =====
+student-frontend/node_modules/
+student-frontend/dist/
+student-frontend/.vite/
+student-frontend/stats.html
+
+# ===== 智能体工作区数据 =====
+.workbuddy/
+
+# ===== 临时下载的工具 =====
+tools/
+
+# ===== 运行日志 =====
+*.log
+backend_run.log
+frontend_run.log

@@ -25,6 +25,17 @@
         <div class="page-header">
           <span>成绩管理</span>
           <el-button type="primary" :icon="Plus" @click="handleAdd">录入成绩</el-button>
+          <el-button v-if="userStore.role === 'ADMIN'" type="success" :icon="Download" @click="handleExport">导出</el-button>
+          <el-upload
+            v-if="userStore.role === 'ADMIN'"
+            :auto-upload="false"
+            :show-file-list="false"
+            :on-change="handleImport"
+            accept=".xlsx,.xls"
+            style="display: inline-block; margin-left: 8px;"
+          >
+            <el-button type="warning" :icon="Upload">导入</el-button>
+          </el-upload>
         </div>
       </template>
 
@@ -129,8 +140,9 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Search, Refresh, Edit, Delete } from '@element-plus/icons-vue'
-import { getScorePage, addScore, updateScore, deleteScore, getScoreStats } from '@/api/score'
+import { useUserStore } from '@/store/user'
+import { Plus, Search, Refresh, Edit, Delete, Download, Upload } from '@element-plus/icons-vue'
+import { getScorePage, addScore, updateScore, deleteScore, getScoreStats, exportScore, importScore, exportScoreImportFail } from '@/api/score'
 import { getCourseList } from '@/api/course'
 import { getClazzList } from '@/api/clazz'
 import { getStudentPage } from '@/api/student'
@@ -146,6 +158,7 @@ const courseList = ref([])
 const clazzList = ref([])
 const studentList = ref([])
 const isEdit = ref(false)
+const userStore = useUserStore()
 
 const stats = reactive({
   avg: 0,
@@ -249,6 +262,51 @@ function resetQuery() {
   queryForm.current = 1
   loadData()
   loadStats()
+}
+
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+}
+
+function handleExport() {
+  exportScore(queryForm).then(res => {
+    downloadBlob(res.data, '成绩信息.xlsx')
+    ElMessage.success('导出成功')
+  }).catch(() => {})
+}
+
+function handleImport(file) {
+  const raw = file.raw
+  if (!raw) return
+  const fd = new FormData()
+  fd.append('file', raw)
+  importScore(fd).then(res => {
+    const d = res.data || {}
+    const successCount = d.successCount || 0
+    const failRows = d.failRows || []
+    if (failRows.length) {
+      ElMessageBox.confirm(
+        `成功导入 ${successCount} 条，失败 ${failRows.length} 条。是否下载错误明细 Excel（含失败原因）？`,
+        '导入完成',
+        { confirmButtonText: '下载错误明细', cancelButtonText: '仅查看成功', type: 'warning' }
+      ).then(() => exportScoreImportFail(failRows))
+        .then(resp => {
+          downloadBlob(resp.data, '成绩导入失败明细.xlsx')
+          ElMessage.success('错误明细已下载')
+        }).catch(() => {})
+    } else {
+      ElMessage.success(`导入成功，共 ${successCount} 条`)
+    }
+    loadData()
+    loadStats()
+  }).catch(() => {})
 }
 
 function handleAdd() {

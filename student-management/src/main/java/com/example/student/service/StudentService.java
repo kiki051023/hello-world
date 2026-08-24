@@ -2,7 +2,12 @@ package com.example.student.service;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.example.student.common.ImportResult;
 import com.example.student.entity.Student;
+import com.example.student.excel.StudentExcel;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 public interface StudentService extends IService<Student> {
 
@@ -15,4 +20,8 @@ public interface StudentService extends IService<Student> {
     void deleteStudent(Long id);
 
     Student getStudentById(Long id);
+
+    List<StudentExcel> exportStudents(String name, String studentNo, Long clazzId);
+
+    ImportResult<StudentExcel> importStudents(MultipartFile file);
 }

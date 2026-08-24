@@ -16,37 +16,43 @@ const routes = [
         path: 'dashboard',
         name: 'Dashboard',
         component: () => import('@/views/Dashboard.vue'),
-        meta: { title: '首页', icon: 'HomeFilled' }
+        meta: { title: '首页', icon: 'HomeFilled', roles: ['ADMIN', 'TEACHER', 'STUDENT'] }
       },
       {
         path: 'student',
         name: 'Student',
         component: () => import('@/views/Student.vue'),
-        meta: { title: '学生管理', icon: 'User' }
+        meta: { title: '学生管理', icon: 'User', roles: ['ADMIN', 'TEACHER'] }
       },
       {
         path: 'clazz',
         name: 'Clazz',
         component: () => import('@/views/Clazz.vue'),
-        meta: { title: '班级管理', icon: 'OfficeBuilding' }
+        meta: { title: '班级管理', icon: 'OfficeBuilding', roles: ['ADMIN', 'TEACHER'] }
       },
       {
         path: 'course',
         name: 'Course',
         component: () => import('@/views/Course.vue'),
-        meta: { title: '课程管理', icon: 'Reading' }
+        meta: { title: '课程管理', icon: 'Reading', roles: ['ADMIN', 'TEACHER'] }
       },
       {
         path: 'score',
         name: 'Score',
         component: () => import('@/views/Score.vue'),
-        meta: { title: '成绩管理', icon: 'DataAnalysis' }
+        meta: { title: '成绩管理', icon: 'DataAnalysis', roles: ['ADMIN', 'TEACHER', 'STUDENT'] }
+      },
+      {
+        path: 'analysis',
+        name: 'Analysis',
+        component: () => import('@/views/Analysis.vue'),
+        meta: { title: '成绩分析', icon: 'TrendCharts', roles: ['ADMIN', 'TEACHER', 'STUDENT'] }
       },
       {
         path: 'teacher',
         name: 'Teacher',
         component: () => import('@/views/Teacher.vue'),
-        meta: { title: '教师管理', icon: 'Avatar' }
+        meta: { title: '教师管理', icon: 'Avatar', roles: ['ADMIN'] }
       }
     ]
   }
@@ -57,21 +63,36 @@ const router = createRouter({
   routes
 })
 
+function getRoleFromStorage() {
+  try {
+    const raw = localStorage.getItem('userInfo')
+    if (raw) return JSON.parse(raw).role || ''
+  } catch (e) {
+    return ''
+  }
+  return ''
+}
+
 router.beforeEach((to, from, next) => {
   const token = localStorage.getItem('token')
   if (to.path === '/login') {
-    if (token) {
-      next('/')
-    } else {
-      next()
-    }
-  } else {
-    if (token) {
-      next()
-    } else {
-      next('/login')
+    next(token ? '/' : undefined)
+    return
+  }
+  if (!token) {
+    next('/login')
+    return
+  }
+  // 角色守卫：与后端 @PreAuthorize 保持一致，越权访问重定向到首页
+  const roles = to.meta?.roles
+  if (Array.isArray(roles) && roles.length) {
+    const role = getRoleFromStorage()
+    if (!roles.includes(role)) {
+      next('/dashboard')
+      return
     }
   }
+  next()
 })
 
 export default router

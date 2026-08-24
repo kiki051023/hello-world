@@ -44,3 +44,29 @@ export function deleteClazz(id) {
     method: 'delete'
   })
 }
+
+export function exportClazz(params) {
+  return request({
+    url: '/clazz/export',
+    method: 'get',
+    params,
+    responseType: 'blob'
+  })
+}
+
+export function importClazz(data) {
+  return request({
+    url: '/clazz/import',
+    method: 'post',
+    data
+  })
+}
+
+export function exportClazzImportFail(data) {
+  return request({
+    url: '/clazz/import-fail-export',
+    method: 'post',
+    data,
+    responseType: 'blob'
+  })
+}

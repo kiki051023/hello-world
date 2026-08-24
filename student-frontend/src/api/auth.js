@@ -14,3 +14,12 @@ export function logout() {
     method: 'post'
   })
 }
+
+export function refresh(refreshToken) {
+  return request({
+    url: '/auth/refresh',
+    method: 'post',
+    data: { refreshToken },
+    _isRefresh: true
+  })
+}

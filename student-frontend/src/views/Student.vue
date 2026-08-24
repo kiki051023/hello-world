@@ -5,6 +5,17 @@
         <div class="page-header">
           <span>学生管理</span>
           <el-button type="primary" :icon="Plus" @click="handleAdd">新增学生</el-button>
+          <el-button v-if="userStore.role === 'ADMIN'" type="success" :icon="Download" @click="handleExport">导出</el-button>
+          <el-upload
+            v-if="userStore.role === 'ADMIN'"
+            :auto-upload="false"
+            :show-file-list="false"
+            :on-change="handleImport"
+            accept=".xlsx,.xls"
+            style="display: inline-block; margin-left: 8px;"
+          >
+            <el-button type="warning" :icon="Upload">导入</el-button>
+          </el-upload>
         </div>
       </template>
 
@@ -105,8 +116,9 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Search, Refresh, Edit, Delete } from '@element-plus/icons-vue'
-import { getStudentPage, addStudent, updateStudent, deleteStudent } from '@/api/student'
+import { useUserStore } from '@/store/user'
+import { Plus, Search, Refresh, Edit, Delete, Download, Upload } from '@element-plus/icons-vue'
+import { getStudentPage, addStudent, updateStudent, deleteStudent, exportStudent, importStudent, exportStudentImportFail } from '@/api/student'
 import { getClazzList } from '@/api/clazz'
 
 const loading = ref(false)
@@ -118,6 +130,7 @@ const tableData = ref([])
 const total = ref(0)
 const clazzList = ref([])
 const isEdit = ref(false)
+const userStore = useUserStore()
 
 const queryForm = reactive({
   current: 1,
@@ -174,6 +187,50 @@ function resetQuery() {
   queryForm.clazzId = null
   queryForm.current = 1
   loadData()
+}
+
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+}
+
+function handleExport() {
+  exportStudent(queryForm).then(res => {
+    downloadBlob(res.data, '学生信息.xlsx')
+    ElMessage.success('导出成功')
+  }).catch(() => {})
+}
+
+function handleImport(file) {
+  const raw = file.raw
+  if (!raw) return
+  const fd = new FormData()
+  fd.append('file', raw)
+  importStudent(fd).then(res => {
+    const d = res.data || {}
+    const failRows = d.failRows || []
+    if (failRows.length) {
+      ElMessageBox.confirm(
+        `成功导入 ${d.successCount || 0} 条，失败 ${failRows.length} 条。是否下载错误明细 Excel？`,
+        '导入完成',
+        { confirmButtonText: '下载错误明细', cancelButtonText: '取消', type: 'warning' }
+      ).then(() => {
+        return exportStudentImportFail(failRows)
+      }).then(resp => {
+        downloadBlob(resp.data, '学生导入失败明细.xlsx')
+        ElMessage.success('错误明细已下载')
+      }).catch(() => {})
+    } else {
+      ElMessage.success(`导入成功，共 ${d.successCount || 0} 条`)
+    }
+    loadData()
+  }).catch(() => {})
 }
 
 function handleAdd() {

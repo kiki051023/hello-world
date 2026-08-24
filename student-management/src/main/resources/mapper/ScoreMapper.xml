@@ -34,4 +34,117 @@
         ORDER BY sc.id DESC
     </select>
 
+    <select id="selectScoreStats" resultType="java.util.HashMap">
+        SELECT
+            COALESCE(ROUND(AVG(sc.score), 2), 0) AS avg,
+            COALESCE(MAX(sc.score), 0)           AS max,
+            COALESCE(MIN(sc.score), 0)           AS min,
+            COALESCE(ROUND(SUM(CASE WHEN sc.score &gt;= 60 THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2), 0) AS passRate
+        FROM score sc
+        LEFT JOIN student s ON sc.student_id = s.id
+        WHERE sc.deleted = 0
+        <if test="courseId != null">
+            AND sc.course_id = #{courseId}
+        </if>
+        <if test="clazzId != null">
+            AND s.clazz_id = #{clazzId}
+        </if>
+    </select>
+
+    <!-- 成绩分段分布：0-59 / 60-69 / 70-79 / 80-89 / 90-100 -->
+    <select id="selectScoreDistribution" resultType="java.util.HashMap">
+        SELECT
+            CASE
+                WHEN sc.score &lt; 60 THEN 0
+                WHEN sc.score &lt; 70 THEN 1
+                WHEN sc.score &lt; 80 THEN 2
+                WHEN sc.score &lt; 90 THEN 3
+                ELSE 4
+            END AS bucket,
+            COUNT(*) AS cnt
+        FROM score sc
+        WHERE sc.deleted = 0
+        GROUP BY bucket
+        ORDER BY bucket
+    </select>
+
+    <!-- 各班平均分（降序） -->
+    <select id="selectAvgByClazz" resultType="java.util.HashMap">
+        SELECT c.clazz_name AS clazzName,
+               ROUND(AVG(sc.score), 2) AS avgScore
+        FROM score sc
+        JOIN student s ON sc.student_id = s.id
+        JOIN clazz c ON s.clazz_id = c.id
+        WHERE sc.deleted = 0
+        GROUP BY c.id, c.clazz_name
+        ORDER BY avgScore DESC
+    </select>
+
+    <!-- 各课程及格率(%)（降序） -->
+    <select id="selectPassRateByCourse" resultType="java.util.HashMap">
+        SELECT c.course_name AS courseName,
+               ROUND(SUM(CASE WHEN sc.score &gt;= 60 THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) AS passRate
+        FROM score sc
+        JOIN course c ON sc.course_id = c.id
+        WHERE sc.deleted = 0
+        GROUP BY c.id, c.course_name
+        ORDER BY passRate DESC
+    </select>
+
+    <!-- 各课程平均分（降序） -->
+    <select id="selectAvgByCourse" resultType="java.util.HashMap">
+        SELECT c.course_name AS courseName,
+               ROUND(AVG(sc.score), 2) AS avgScore
+        FROM score sc
+        JOIN course c ON sc.course_id = c.id
+        WHERE sc.deleted = 0
+        GROUP BY c.id, c.course_name
+        ORDER BY avgScore DESC
+    </select>
+
+    <!-- 成绩 TopN 学生（按平均分降序） -->
+    <select id="selectTopStudents" resultType="java.util.HashMap">
+        SELECT s.name AS studentName,
+               ROUND(AVG(sc.score), 2) AS avgScore
+        FROM score sc
+        JOIN student s ON sc.student_id = s.id
+        WHERE sc.deleted = 0
+        GROUP BY s.id, s.name
+        ORDER BY avgScore DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 成绩趋势：按月平均分 -->
+    <select id="selectScoreTrend" resultType="java.util.HashMap">
+        SELECT DATE_FORMAT(sc.exam_time, '%Y-%m') AS examMonth,
+               ROUND(AVG(sc.score), 2) AS avgScore
+        FROM score sc
+        WHERE sc.deleted = 0
+          AND sc.exam_time IS NOT NULL
+        GROUP BY examMonth
+        ORDER BY examMonth
+    </select>
+
+    <!-- 及格 / 不及格人数 -->
+    <select id="selectPassFail" resultType="java.util.HashMap">
+        SELECT
+            SUM(CASE WHEN sc.score &gt;= 60 THEN 1 ELSE 0 END) AS passCount,
+            SUM(CASE WHEN sc.score &lt; 60 THEN 1 ELSE 0 END)  AS failCount
+        FROM score sc
+        WHERE sc.deleted = 0
+    </select>
+
+    <!-- 指定学生的各课程成绩（雷达图） -->
+    <select id="selectStudentCourseScores" resultType="java.util.HashMap">
+        SELECT c.course_name AS courseName,
+               sc.score      AS score,
+               s.name        AS studentName
+        FROM score sc
+        JOIN student s ON sc.student_id = s.id
+        JOIN course c ON sc.course_id = c.id
+        WHERE sc.deleted = 0
+          AND sc.student_id = #{studentId}
+        ORDER BY c.course_name
+    </select>
+
 </mapper>

@@ -2,7 +2,10 @@ package com.example.student.service;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.example.student.common.ImportResult;
 import com.example.student.entity.Clazz;
+import com.example.student.excel.ClazzExcel;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -17,4 +20,8 @@ public interface ClazzService extends IService<Clazz> {
     void deleteClazz(Long id);
 
     List<Clazz> getAllClazz();
+
+    List<ClazzExcel> exportClazzs(String clazzName, String grade);
+
+    ImportResult<ClazzExcel> importClazzs(MultipartFile file);
 }

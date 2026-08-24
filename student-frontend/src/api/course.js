@@ -44,3 +44,29 @@ export function deleteCourse(id) {
     method: 'delete'
   })
 }
+
+export function exportCourse(params) {
+  return request({
+    url: '/course/export',
+    method: 'get',
+    params,
+    responseType: 'blob'
+  })
+}
+
+export function importCourse(data) {
+  return request({
+    url: '/course/import',
+    method: 'post',
+    data
+  })
+}
+
+export function exportCourseImportFail(data) {
+  return request({
+    url: '/course/import-fail-export',
+    method: 'post',
+    data,
+    responseType: 'blob'
+  })
+}

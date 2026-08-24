@@ -129,6 +129,7 @@ student-management-system/
 - **JDK**: 17 或以上
 - **Node.js**: 16.x 或以上
 - **MySQL**: 8.0 或以上
+- **Redis**: 6.x 或以上（令牌黑名单与刷新令牌依赖，需先启动）
 - **Maven**: 3.6.x 或以上（或使用 IDEA 内置 Maven）
 
 ## 快速开始
@@ -140,6 +141,8 @@ student-management-system/
 ```
 
 ### 2. 初始化数据库
+
+> ⚠️ 启动后端前请先启动 Redis（默认 `localhost:6379`），否则登录/鉴权相关功能会因无法连接 Redis 而报错。可用 `REDIS_HOST` / `REDIS_PORT` / `REDIS_PASSWORD` 环境变量覆盖连接配置。
 
 **方式一：命令行导入**
 
