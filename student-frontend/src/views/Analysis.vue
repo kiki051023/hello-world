@@ -292,7 +292,8 @@ onMounted(async () => {
     const [overviewRes, analysisRes, studentRes] = await Promise.all([
       getOverview(),
       getScoreAnalysis(),
-      getStudentPage({ current: 1, size: 1000 })
+      // 雷达图下拉列表：页大小受后端 @Max(100) 约束，size=1000 会被 400 拒绝
+      getStudentPage({ current: 1, size: 100 })
     ])
     overview.value = overviewRes.data || {}
     analysis.value = analysisRes.data || {}
