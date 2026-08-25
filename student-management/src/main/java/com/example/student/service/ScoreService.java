@@ -29,6 +29,9 @@ public interface ScoreService extends IService<Score> {
 
     ImportResult<ScoreExcel> importScores(MultipartFile file);
 
+    /** 导出前计数（判断是否超异步阈值） */
+    long countForExport(Long studentId, Long courseId, Long clazzId);
+
     /** 每生有效不及格课程数（active=1 且 APPROVED，每课取最高分），供预警规则扫描 */
     Map<Long, Integer> countFailCoursesPerStudent();
 }

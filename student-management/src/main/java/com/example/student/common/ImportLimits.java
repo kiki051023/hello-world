@@ -7,6 +7,9 @@ public final class ImportLimits {
 
     public static final int MAX_SYNC_ROWS = 10_000;
 
+    /** 同步导出行数上限；超过转异步任务 */
+    public static final int MAX_EXPORT_ROWS = 10_000;
+
     private ImportLimits() {
     }
 

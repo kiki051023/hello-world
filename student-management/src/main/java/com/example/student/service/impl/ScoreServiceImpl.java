@@ -218,6 +218,14 @@ public class ScoreServiceImpl extends ServiceImpl<ScoreMapper, Score> implements
     }
 
     @Override
+    public long countForExport(Long studentId, Long courseId, Long clazzId) {
+        Long scopedStudentId = studentDataScopeService.resolveStudentId(studentId);
+        return dataScopeService == null
+                ? baseMapper.countForExport(scopedStudentId, courseId, clazzId)
+                : baseMapper.countForExport(scopedStudentId, courseId, clazzId, currentScope());
+    }
+
+    @Override
     public Map<Long, Integer> countFailCoursesPerStudent() {
         Map<Long, Integer> result = new HashMap<>();
         for (Map<String, Object> row : baseMapper.countFailCoursesPerStudent()) {

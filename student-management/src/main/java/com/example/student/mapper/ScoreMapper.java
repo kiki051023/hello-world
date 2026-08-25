@@ -78,4 +78,14 @@ public interface ScoreMapper extends BaseMapper<Score> {
 
     /** 每生有效不及格课程数（预警用） */
     List<Map<String, Object>> countFailCoursesPerStudent();
+
+    /** 导出前计数（同导出过滤条件） */
+    long countForExport(@Param("studentId") Long studentId,
+                        @Param("courseId") Long courseId,
+                        @Param("clazzId") Long clazzId,
+                        @Param("scope") DataScopeFilter scope);
+
+    default long countForExport(Long studentId, Long courseId, Long clazzId) {
+        return countForExport(studentId, courseId, clazzId, null);
+    }
 }

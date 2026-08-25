@@ -301,4 +301,23 @@
         GROUP BY t.student_id
     </select>
 
+    <!-- 导出前计数（与 selectScoreExport 同过滤条件） -->
+    <select id="countForExport" resultType="long">
+        SELECT COUNT(*)
+        FROM score sc
+        JOIN student s ON sc.student_id = s.id
+        JOIN course c ON sc.course_id = c.id
+        WHERE sc.deleted = 0
+        <if test="scope != null and !scope.unrestricted">
+            AND ( (scope.selfOnly AND s.user_id = scope.userId)
+               OR (scope.departmentId != null AND s.department_id = scope.departmentId)
+               OR (scope.hasClassIds AND s.clazz_id IN <foreach collection="scope.classIds" item="id" open="(" separator="," close=")">#{id}</foreach>)
+               OR (scope.teacherId != null AND c.teacher_id = scope.teacherId)
+               OR (scope.hasCourseIds AND sc.course_id IN <foreach collection="scope.courseIds" item="id" open="(" separator="," close=")">#{id}</foreach>) )
+        </if>
+        <if test="studentId != null">AND sc.student_id = #{studentId}</if>
+        <if test="courseId != null">AND sc.course_id = #{courseId}</if>
+        <if test="clazzId != null">AND s.clazz_id = #{clazzId}</if>
+    </select>
+
 </mapper>
