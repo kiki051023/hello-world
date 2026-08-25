@@ -26,6 +26,6 @@ if defined JAVA_HOME (
     set JAVA_EXE="%JAVA_HOME%\bin\java.exe"
 )
 
-"%JAVA_EXE%" -jar "%WRAPPER_JAR%" %*
+"%JAVA_EXE%" -classpath "%WRAPPER_JAR%" org.apache.maven.wrapper.MavenWrapperMain %*
 
 endlocal
