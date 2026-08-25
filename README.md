@@ -130,7 +130,7 @@ student-management-system/
 - **Node.js**: 16.x 或以上
 - **MySQL**: 8.0 或以上
 - **Redis**: 6.x 或以上（令牌黑名单与刷新令牌依赖，需先启动）
-- **Maven**: 3.6.x 或以上（或使用 IDEA 内置 Maven）
+- **Maven**: 可选。项目内置 Maven Wrapper，会在首次运行时独立下载 Maven 3.9.6；也可使用 Maven 3.6.x 或以上。
 
 ## 快速开始
 
@@ -178,8 +178,10 @@ spring:
 
 ```bash
 cd student-management
-mvn spring-boot:run
+mvnw.cmd spring-boot:run
 ```
+
+Windows 用户无需预先安装 Maven；`mvnw.cmd` 会自动下载 Wrapper 所需的 Maven 发行版并复用本地缓存。也可以直接运行 `mvnw.bat`。
 
 后端启动后访问：`http://localhost:8080/doc.html` 查看接口文档
 
@@ -260,7 +262,7 @@ student ─── N:M ─── course (通过 score 表)
 
 ```bash
 cd student-management
-mvn clean package
+mvnw.cmd clean package
 java -jar target/student-management-1.0.0.jar
 ```
 

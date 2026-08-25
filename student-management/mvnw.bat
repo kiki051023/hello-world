@@ -1,13 +1,15 @@
 @echo off
 setlocal
 
-set DIRNAME=%~dp0
-if "%DIRNAME%" == "" set DIRNAME=.
-set APP_BASE_NAME=%~n0
-set APP_HOME=%DIRNAME%
+set "DIRNAME=%~dp0"
+if "%DIRNAME%" == "" set "DIRNAME=."
+set "APP_BASE_NAME=%~n0"
+set "APP_HOME=%DIRNAME%"
+set "MAVEN_PROJECTBASEDIR=%APP_HOME%"
+if "%MAVEN_PROJECTBASEDIR:~-1%" == "\" set "MAVEN_PROJECTBASEDIR=%MAVEN_PROJECTBASEDIR:~0,-1%"
 
-set WRAPPER_JAR="%APP_HOME%\.mvn\wrapper\maven-wrapper.jar"
-set WRAPPER_URL="https://repo.maven.apache.org/maven2/org/apache/maven/wrapper/maven-wrapper/3.2.0/maven-wrapper-3.2.0.jar"
+set "WRAPPER_JAR=%APP_HOME%\.mvn\wrapper\maven-wrapper.jar"
+set "WRAPPER_URL=https://repo.maven.apache.org/maven2/org/apache/maven/wrapper/maven-wrapper/3.2.0/maven-wrapper-3.2.0.jar"
 
 if not exist "%WRAPPER_JAR%" (
     echo Downloading Maven Wrapper...
@@ -21,11 +23,11 @@ if not exist "%WRAPPER_JAR%" (
     )
 )
 
-set JAVA_EXE=java.exe
+set "JAVA_EXE=java.exe"
 if defined JAVA_HOME (
-    set JAVA_EXE="%JAVA_HOME%\bin\java.exe"
+    set "JAVA_EXE=%JAVA_HOME%\bin\java.exe"
 )
 
-"%JAVA_EXE%" -classpath "%WRAPPER_JAR%" org.apache.maven.wrapper.MavenWrapperMain %*
+"%JAVA_EXE%" "-Dmaven.multiModuleProjectDirectory=%MAVEN_PROJECTBASEDIR%" -classpath "%WRAPPER_JAR%" org.apache.maven.wrapper.MavenWrapperMain %*
 
 endlocal
