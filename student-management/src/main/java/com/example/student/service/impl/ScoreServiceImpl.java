@@ -61,6 +61,11 @@ public class ScoreServiceImpl extends ServiceImpl<ScoreMapper, Score> implements
     public void addScore(Score score) {
         if (!dataScopeService.canAccessCourse(courseMapper.selectById(score.getCourseId())))
             throw new org.springframework.security.access.AccessDeniedException("无权新增该课程成绩");
+        // 阶段二：旧接口统一走生命周期——落库为 DRAFT，经提交/审核后才成为有效成绩
+        score.setId(null);
+        score.setScoreStatus("DRAFT");
+        score.setActive(0);
+        if (score.getScoreType() == null) score.setScoreType("REGULAR");
         baseMapper.insert(score);
     }
 
@@ -70,6 +75,9 @@ public class ScoreServiceImpl extends ServiceImpl<ScoreMapper, Score> implements
         Course course = existing == null ? null : courseMapper.selectById(existing.getCourseId());
         if (existing == null || course == null || !dataScopeService.canAccessCourse(course))
             throw new org.springframework.security.access.AccessDeniedException("无权修改该成绩");
+        // 已审核/作废成绩不可直接改分，须走补考/重修流程
+        if ("APPROVED".equals(existing.getScoreStatus()) || "VOID".equals(existing.getScoreStatus()))
+            throw new BusinessException("已审核/作废成绩不可修改，请使用补考/重修流程");
         baseMapper.updateById(score);
     }
 
@@ -193,6 +201,10 @@ public class ScoreServiceImpl extends ServiceImpl<ScoreMapper, Score> implements
                 s.setCourseId(cid);
                 s.setScore(e.getScore());
                 s.setExamTime(e.getExamTime());
+                // 与手工录入一致：导入成绩同样进入草稿态，经提交/审核后生效
+                s.setScoreStatus("DRAFT");
+                s.setActive(0);
+                s.setScoreType("REGULAR");
                 entities.add(s);
             }
             if (!entities.isEmpty()) {

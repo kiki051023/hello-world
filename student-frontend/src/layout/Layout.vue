@@ -63,7 +63,9 @@ import {
   Reading,
   DataAnalysis,
   Avatar,
-  TrendCharts
+  TrendCharts,
+  Calendar,
+  Checked
 } from '@element-plus/icons-vue'
 import { logout } from '@/api/auth'
 
@@ -81,6 +83,8 @@ const allMenus = [
   { index: '/clazz', title: '班级管理', icon: OfficeBuilding, roles: ['ADMIN', 'TEACHER'] },
   { index: '/course', title: '课程管理', icon: Reading, roles: ['ADMIN', 'TEACHER'] },
   { index: '/score', title: '成绩管理', icon: DataAnalysis, roles: ['ADMIN', 'TEACHER', 'STUDENT'] },
+  { index: '/education', title: '教务管理', icon: Calendar, roles: ['ADMIN', 'EDUCATION_ADMIN', 'DEPARTMENT_LEADER', 'COUNSELOR', 'TEACHER', 'STUDENT'] },
+  { index: '/score-audit', title: '成绩审核', icon: Checked, roles: ['ADMIN', 'EDUCATION_ADMIN', 'DEPARTMENT_LEADER', 'TEACHER'] },
   { index: '/analysis', title: '成绩分析', icon: TrendCharts, roles: ['ADMIN', 'TEACHER', 'STUDENT'] },
   { index: '/teacher', title: '教师管理', icon: Avatar, roles: ['ADMIN'] }
 ]
