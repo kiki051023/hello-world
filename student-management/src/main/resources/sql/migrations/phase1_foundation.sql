@@ -141,6 +141,24 @@ CREATE TABLE IF NOT EXISTS import_error_row (
     KEY idx_import_error_task (task_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='导入错误行';
 
+CREATE TABLE IF NOT EXISTS operation_log (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    operator_id BIGINT NULL,
+    username VARCHAR(100) NULL,
+    action VARCHAR(100) NOT NULL,
+    request_method VARCHAR(16) NULL,
+    request_path VARCHAR(255) NULL,
+    target VARCHAR(255) NULL,
+    result VARCHAR(20) NOT NULL,
+    error_message VARCHAR(500) NULL,
+    request_id VARCHAR(64) NULL,
+    client_ip VARCHAR(64) NULL,
+    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_operation_log_operator (operator_id),
+    KEY idx_operation_log_created (create_time),
+    KEY idx_operation_log_request (request_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='接口操作审计日志';
+
 -- 兼容旧库：通过信息_schema 判断列是否存在，避免重复 ALTER 失败。
 DROP PROCEDURE IF EXISTS phase1_add_column;
 DELIMITER $$

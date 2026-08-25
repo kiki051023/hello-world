@@ -21,6 +21,7 @@ class Phase1FoundationMigrationTest {
                 "sys_permission", "sys_user_role", "sys_role_permission", "sys_data_scope"}) {
             assertTrue(sql.contains("create table if not exists " + table), "missing idempotent table: " + table);
         }
+        assertTrue(sql.contains("create table if not exists operation_log"));
         for (String column : new String[]{"school_id", "department_id", "major_id", "student_status",
                 "education_level", "political_status", "graduation_year", "profile_version", "employee_type",
                 "teacher_type", "employment_status", "permission_version"}) {
