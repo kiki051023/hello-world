@@ -37,4 +37,18 @@ public interface CourseMapper extends BaseMapper<Course> {
             </script>
             """)
     long countScoped(@Param("scope") DataScopeFilter scope);
+
+    /** 范围内全部课程（SQL 级数据范围过滤） */
+    @Select("""
+            <script>
+            SELECT c.* FROM course c WHERE c.deleted = 0
+            <if test="scope != null and !scope.unrestricted">
+              AND ( (scope.teacherId != null AND c.teacher_id = scope.teacherId)
+                 OR (scope.hasCourseIds AND c.id IN
+                     <foreach collection="scope.courseIds" item="id" open="(" separator="," close=")">#{id}</foreach>) )
+            </if>
+            ORDER BY c.id DESC
+            </script>
+            """)
+    List<Course> selectScoped(@Param("scope") DataScopeFilter scope);
 }

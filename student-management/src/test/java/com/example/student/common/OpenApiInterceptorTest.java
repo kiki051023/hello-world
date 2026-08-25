@@ -26,6 +26,9 @@ class OpenApiInterceptorTest {
         mapper = mock(ApiIdempotencyMapper.class);
         interceptor = new OpenApiInterceptor();
         ReflectionTestUtils.setField(interceptor, "idempotencyMapper", mapper);
+        // Redis 不可用降级路径（isRedisBacked=false → 进程内限流）
+        ReflectionTestUtils.setField(interceptor, "cacheService",
+                new com.example.student.common.DistributedCacheService(null));
         when(mapper.insert(any())).thenReturn(1);
         when(mapper.insertAudit(any())).thenReturn(1);
     }

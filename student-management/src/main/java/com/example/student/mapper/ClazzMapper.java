@@ -9,6 +9,9 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
+import java.util.List;
+import java.util.Map;
+
 @Mapper
 public interface ClazzMapper extends BaseMapper<Clazz> {
 
@@ -28,4 +31,44 @@ public interface ClazzMapper extends BaseMapper<Clazz> {
             </script>
             """)
     long countScoped(@Param("scope") DataScopeFilter scope);
+
+    /** 范围内全部班级（SQL 级数据范围过滤，替代 selectList(null)+内存过滤） */
+    @Select("""
+            <script>
+            SELECT c.* FROM clazz c WHERE c.deleted = 0
+            <if test="scope != null and !scope.unrestricted">
+              AND ( (scope.departmentId != null AND c.department_id = scope.departmentId)
+                 OR (scope.hasClassIds AND c.id IN
+                     <foreach collection="scope.classIds" item="id" open="(" separator="," close=")">#{id}</foreach>)
+                 OR (scope.teacherId != null AND c.head_teacher_id = scope.teacherId) )
+            </if>
+            ORDER BY c.id DESC
+            </script>
+            """)
+    List<Clazz> selectScoped(@Param("scope") DataScopeFilter scope);
+
+    /** 范围内班级 id+name 投影（学生导入名称映射用） */
+    @Select("""
+            <script>
+            SELECT c.id, c.clazz_name AS clazzName FROM clazz c WHERE c.deleted = 0
+            <if test="scope != null and !scope.unrestricted">
+              AND ( (scope.departmentId != null AND c.department_id = scope.departmentId)
+                 OR (scope.hasClassIds AND c.id IN
+                     <foreach collection="scope.classIds" item="id" open="(" separator="," close=")">#{id}</foreach>)
+                 OR (scope.teacherId != null AND c.head_teacher_id = scope.teacherId) )
+            </if>
+            </script>
+            """)
+    List<Map<String, Object>> selectScopedNameMap(@Param("scope") DataScopeFilter scope);
+
+    /** 指定 ID 集合的教师姓名投影（单条 SQL，替代教师全表加载） */
+    @Select("""
+            <script>
+            SELECT id, name FROM teacher WHERE deleted = 0
+            <if test="ids != null and ids.size() > 0">
+              AND id IN <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
+            </if>
+            </script>
+            """)
+    List<Map<String, Object>> selectNamesByIds(@Param("ids") List<Long> ids);
 }

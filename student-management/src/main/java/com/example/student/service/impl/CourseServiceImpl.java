@@ -13,6 +13,7 @@ import com.example.student.exception.BusinessException;
 import com.example.student.excel.CourseExcel;
 import com.example.student.mapper.CourseMapper;
 import com.example.student.mapper.TeacherMapper;
+import com.example.student.security.DataScopeFilter;
 import com.example.student.security.DataScopeService;
 import com.example.student.service.CourseService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -64,7 +65,8 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
 
     @Override
     public List<Course> getAllCourse() {
-        return baseMapper.selectList(null).stream().filter(dataScopeService::canAccessCourse).toList();
+        // SQL 级数据范围过滤，替代 selectList(null)+内存过滤
+        return baseMapper.selectScoped(currentScope());
     }
 
     @Override
@@ -108,8 +110,10 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
                     baseMapper.selectIdsByCourseNames(courseNames, dataScopeService.currentFilter()).stream()
                             .map(row -> (String) row.get("courseName")).collect(Collectors.toSet());
             Set<String> importedNames = new java.util.HashSet<>();
-            Map<String, Long> teacherNameMap = teacherMapper.selectList(null).stream()
-                    .collect(Collectors.toMap(Teacher::getName, Teacher::getId, (a, b) -> a));
+            Map<String, Long> teacherNameMap = new java.util.HashMap<>();
+            for (Map<String, Object> row : teacherMapper.selectAllNames()) {
+                teacherNameMap.put((String) row.get("name"), ((Number) row.get("id")).longValue());
+            }
             List<Course> entities = new ArrayList<>();
             for (CourseExcel e : data) {
                 if (e.getCourseName() == null || e.getCourseName().isEmpty()) {
@@ -146,5 +150,9 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
             throw new BusinessException("Excel 解析失败: " + ex.getMessage());
         }
         return result;
+    }
+
+    private DataScopeFilter currentScope() {
+        return dataScopeService == null ? null : dataScopeService.currentFilter();
     }
 }

@@ -9,6 +9,7 @@ import com.example.student.entity.Teacher;
 import com.example.student.exception.BusinessException;
 import com.example.student.excel.TeacherExcel;
 import com.example.student.mapper.TeacherMapper;
+import com.example.student.security.DataScopeFilter;
 import com.example.student.security.DataScopeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import com.example.student.service.TeacherService;
@@ -28,9 +29,14 @@ public class TeacherServiceImpl extends ServiceImpl<TeacherMapper, Teacher> impl
     @Autowired
     private DataScopeService dataScopeService;
 
+    private DataScopeFilter currentScope() {
+        return dataScopeService == null ? null : dataScopeService.currentFilter();
+    }
+
     @Override
     public List<Teacher> getAllTeacher() {
-        return baseMapper.selectList(null).stream().filter(dataScopeService::canAccessTeacher).toList();
+        // SQL 级数据范围过滤，替代 selectList(null)+内存过滤
+        return baseMapper.selectScoped(currentScope());
     }
 
     @Override

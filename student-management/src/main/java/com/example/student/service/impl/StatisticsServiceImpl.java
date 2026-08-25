@@ -32,6 +32,9 @@ public class StatisticsServiceImpl implements StatisticsService {
 
     private final Map<String, CacheEntry> cache = new ConcurrentHashMap<>();
 
+    @Autowired
+    private com.example.student.common.DistributedCacheService distributedCache;
+
     private record CacheEntry(Object value, long expiresAt) {
         boolean fresh() { return System.currentTimeMillis() < expiresAt; }
     }

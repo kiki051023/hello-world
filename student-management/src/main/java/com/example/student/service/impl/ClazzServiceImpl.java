@@ -67,7 +67,8 @@ public class ClazzServiceImpl extends ServiceImpl<ClazzMapper, Clazz> implements
 
     @Override
     public List<Clazz> getAllClazz() {
-        return baseMapper.selectList(null).stream().filter(dataScopeService::canAccessClazz).toList();
+        // SQL 级数据范围过滤，替代 selectList(null)+内存过滤
+        return baseMapper.selectScoped(currentScope());
     }
 
     @Override
@@ -83,8 +84,12 @@ public class ClazzServiceImpl extends ServiceImpl<ClazzMapper, Clazz> implements
         if (clazzName != null && !clazzName.isEmpty()) wrapper.like(Clazz::getClazzName, clazzName);
         if (grade != null && !grade.isEmpty()) wrapper.eq(Clazz::getGrade, grade);
         List<Clazz> list = baseMapper.selectList(wrapper).stream().filter(dataScopeService::canAccessClazz).toList();
-        Map<Long, String> teacherMap = teacherMapper.selectList(null).stream()
-                .collect(Collectors.toMap(Teacher::getId, Teacher::getName, (a, b) -> a));
+        // 教师 id→name 轻量投影（仅两列），替代教师全表实体加载
+        Map<Long, String> teacherMap = new java.util.HashMap<>();
+        for (Map<String, Object> row : teacherMapper.selectNamesByIds(
+                list.stream().map(Clazz::getHeadTeacherId).filter(java.util.Objects::nonNull).distinct().toList())) {
+            teacherMap.put(((Number) row.get("id")).longValue(), (String) row.get("name"));
+        }
         List<ClazzExcel> result = new ArrayList<>();
         for (Clazz c : list) {
             ClazzExcel e = new ClazzExcel();
@@ -156,5 +161,9 @@ public class ClazzServiceImpl extends ServiceImpl<ClazzMapper, Clazz> implements
             throw new BusinessException("Excel 解析失败: " + ex.getMessage());
         }
         return result;
+    }
+
+    private DataScopeFilter currentScope() {
+        return dataScopeService == null ? null : dataScopeService.currentFilter();
     }
 }

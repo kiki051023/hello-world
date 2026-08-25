@@ -33,7 +33,10 @@ public class OpenApiInterceptor implements HandlerInterceptor {
     @Autowired
     private ApiIdempotencyMapper idempotencyMapper;
 
-    // client_id -> 时间戳队列（滑动窗口）
+    @Autowired
+    private com.example.student.common.DistributedCacheService cacheService;
+
+    // 降级路径的进程内滑动窗口（Redis 不可用时使用）
     private final Map<String, Deque<Long>> rateBuckets = new ConcurrentHashMap<>();
 
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
@@ -119,6 +122,10 @@ public class OpenApiInterceptor implements HandlerInterceptor {
     }
 
     private synchronized boolean allowRate(String clientId) {
+        // Redis 可用时跨实例一致；否则进程内降级
+        if (cacheService.isRedisBacked()) {
+            return cacheService.tryAcquire("openapi:" + clientId, RATE_LIMIT_PER_MINUTE);
+        }
         long now = System.currentTimeMillis();
         Deque<Long> q = rateBuckets.computeIfAbsent(clientId, k -> new ArrayDeque<>());
         while (!q.isEmpty() && now - q.peekFirst() > 60_000L) q.pollFirst();

@@ -116,8 +116,10 @@ public class StudentServiceImpl extends ServiceImpl<StudentMapper, Student> impl
                     baseMapper.selectIdsByStudentNos(studentNos, dataScopeService.currentFilter()).stream()
                             .map(row -> (String) row.get("studentNo")).collect(Collectors.toSet());
             Set<String> importedNos = new java.util.HashSet<>();
-            Map<String, Long> clazzNameMap = clazzMapper.selectList(null).stream().filter(dataScopeService::canAccessClazz)
-                    .collect(Collectors.toMap(Clazz::getClazzName, Clazz::getId, (a, b) -> a));
+            Map<String, Long> clazzNameMap = new java.util.HashMap<>();
+            for (Map<String, Object> row : clazzMapper.selectScopedNameMap(dataScopeService.currentFilter())) {
+                clazzNameMap.put((String) row.get("clazzName"), ((Number) row.get("id")).longValue());
+            }
             List<Student> entities = new ArrayList<>();
             for (StudentExcel e : data) {
                 StringBuilder err = new StringBuilder();
