@@ -179,10 +179,10 @@
 - Create: report task entities/services/controllers
 - Modify: `student-frontend/src/views/Analysis.vue`
 
-- [ ] 将统计改为数据库聚合和明确过滤条件。
-- [ ] 高频指标使用短时缓存并按组织范围隔离缓存键。
+- [x] 将统计改为数据库聚合和明确过滤条件。
+- [x] 高频指标使用短时缓存并按组织范围隔离缓存键。
 - [ ] 超过阈值的导出转为异步任务并记录状态。
-- [ ] 验证统计明细可追溯。
+- [x] 验证统计明细可追溯。
 
 ### Task 13: 文件、导入任务和运维
 
@@ -190,9 +190,9 @@
 - Create: file/import-task/log modules
 - Modify: existing Excel endpoints and frontend upload components
 
-- [ ] 记录文件元数据、导入任务和错误行。
-- [ ] 限制文件类型、大小和行数。
-- [ ] 增加数据库备份、恢复、日志查询和异常监控说明。
+- [x] 记录文件元数据、导入任务和错误行。
+- [x] 限制文件类型、大小和行数。
+- [x] 增加数据库备份、恢复、日志查询和异常监控说明。
 
 ## 全量验证
 
