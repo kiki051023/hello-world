@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.example.student.common.ImportLimits;
 import com.example.student.common.ImportResult;
 import com.example.student.entity.Clazz;
 import com.example.student.entity.Student;
@@ -15,6 +16,7 @@ import com.example.student.mapper.StudentMapper;
 import com.example.student.service.StudentService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -85,11 +87,13 @@ public class StudentServiceImpl extends ServiceImpl<StudentMapper, Student> impl
     }
 
     @Override
+    @Transactional
     public ImportResult<StudentExcel> importStudents(MultipartFile file) {
         ImportResult<StudentExcel> result = new ImportResult<>();
         try {
             List<?> rows = EasyExcel.read(file.getInputStream()).head(StudentExcel.class).sheet().doReadSync();
             List<StudentExcel> data = rows.stream().map(o -> (StudentExcel) o).collect(Collectors.toList());
+            ImportLimits.requireAllowedRowCount(data.size());
             result.setTotal(data.size());
             Set<String> existingNos = baseMapper.selectList(null).stream()
                     .map(Student::getStudentNo).collect(Collectors.toSet());

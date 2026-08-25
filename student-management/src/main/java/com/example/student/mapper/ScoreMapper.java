@@ -30,6 +30,9 @@ public interface ScoreMapper extends BaseMapper<Score> {
                                                 @Param("courseId") Long courseId,
                                                 @Param("clazzId") Long clazzId);
 
+    List<Map<String, Object>> selectExistingStudentCoursePairs(@Param("studentIds") List<Long> studentIds,
+                                                                @Param("courseIds") List<Long> courseIds);
+
     /** 成绩分段分布：[0,60) / [60,70) / [70,80) / [80,90) / [90,100]，返回 bucket(0-4) 与 cnt */
     List<Map<String, Object>> selectScoreDistribution();
 

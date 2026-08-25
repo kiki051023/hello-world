@@ -18,4 +18,6 @@ public interface CourseMapper extends BaseMapper<Course> {
 
     List<Map<String, Object>> selectCourseExport(@Param("courseName") String courseName,
                                                  @Param("teacherId") Long teacherId);
+
+    List<Map<String, Object>> selectIdsByCourseNames(@Param("courseNames") List<String> courseNames);
 }

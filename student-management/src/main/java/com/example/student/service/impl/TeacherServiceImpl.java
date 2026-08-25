@@ -2,6 +2,7 @@ package com.example.student.service.impl;
 
 import com.alibaba.excel.EasyExcel;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.example.student.common.ImportLimits;
 import com.example.student.common.ImportResult;
 import com.example.student.entity.Teacher;
 import com.example.student.exception.BusinessException;
@@ -9,6 +10,7 @@ import com.example.student.excel.TeacherExcel;
 import com.example.student.mapper.TeacherMapper;
 import com.example.student.service.TeacherService;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -56,11 +58,13 @@ public class TeacherServiceImpl extends ServiceImpl<TeacherMapper, Teacher> impl
     }
 
     @Override
+    @Transactional
     public ImportResult<TeacherExcel> importTeachers(MultipartFile file) {
         ImportResult<TeacherExcel> result = new ImportResult<>();
         try {
             List<?> rows = EasyExcel.read(file.getInputStream()).head(TeacherExcel.class).sheet().doReadSync();
             List<TeacherExcel> data = rows.stream().map(o -> (TeacherExcel) o).collect(Collectors.toList());
+            ImportLimits.requireAllowedRowCount(data.size());
             result.setTotal(data.size());
             Set<String> existing = baseMapper.selectList(null).stream()
                     .map(Teacher::getTeacherNo).collect(Collectors.toSet());

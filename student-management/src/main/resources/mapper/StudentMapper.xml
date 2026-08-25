@@ -54,4 +54,14 @@
         ORDER BY s.id DESC
     </select>
 
+    <select id="selectIdsByStudentNos" resultType="java.util.HashMap">
+        SELECT id AS id, student_no AS studentNo
+        FROM student
+        WHERE deleted = 0
+          AND student_no IN
+        <foreach collection="studentNos" item="studentNo" open="(" separator="," close=")">
+            #{studentNo}
+        </foreach>
+    </select>
+
 </mapper>

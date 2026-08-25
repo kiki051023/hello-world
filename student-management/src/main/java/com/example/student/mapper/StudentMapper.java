@@ -20,4 +20,6 @@ public interface StudentMapper extends BaseMapper<Student> {
     List<Map<String, Object>> selectStudentExport(@Param("name") String name,
                                                   @Param("studentNo") String studentNo,
                                                   @Param("clazzId") Long clazzId);
+
+    List<Map<String, Object>> selectIdsByStudentNos(@Param("studentNos") List<String> studentNos);
 }

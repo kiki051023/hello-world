@@ -43,4 +43,14 @@
         ORDER BY c.id DESC
     </select>
 
+    <select id="selectIdsByCourseNames" resultType="java.util.HashMap">
+        SELECT id AS id, course_name AS courseName
+        FROM course
+        WHERE deleted = 0
+          AND course_name IN
+        <foreach collection="courseNames" item="courseName" open="(" separator="," close=")">
+            #{courseName}
+        </foreach>
+    </select>
+
 </mapper>
