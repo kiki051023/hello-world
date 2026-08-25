@@ -79,7 +79,8 @@ public class AuthController {
         }
         String username = jwtUtils.getUsernameFromToken(refreshToken);
         String role = jwtUtils.getRoleFromToken(refreshToken);
-        String newAccessToken = jwtUtils.generateAccessToken(userId, username, role);
+        Integer permissionVersion = jwtUtils.getPermissionVersionFromToken(refreshToken);
+        String newAccessToken = jwtUtils.generateAccessToken(userId, username, role, permissionVersion);
 
         Map<String, Object> result = new HashMap<>();
         result.put("accessToken", newAccessToken);

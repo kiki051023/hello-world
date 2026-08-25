@@ -36,20 +36,32 @@ public class JwtUtils {
     }
 
     public String generateAccessToken(Long userId, String username, String role) {
-        return buildToken(userId, username, role, TOKEN_TYPE_ACCESS, accessExpire);
+        return generateAccessToken(userId, username, role, 1);
+    }
+
+    public String generateAccessToken(Long userId, String username, String role, Integer permissionVersion) {
+        return buildToken(userId, username, role, permissionVersion, TOKEN_TYPE_ACCESS, accessExpire);
     }
 
     public String generateRefreshToken(Long userId, String username, String role) {
-        // 刷新令牌也携带角色，避免刷新时回查数据库；角色变更需重新登录生效
-        return buildToken(userId, username, role, TOKEN_TYPE_REFRESH, refreshExpire);
+        return generateRefreshToken(userId, username, role, 1);
     }
 
-    private String buildToken(Long userId, String username, String role, String type, Long expire) {
+    public String generateRefreshToken(Long userId, String username, String role, Integer permissionVersion) {
+        // 刷新令牌也携带角色，避免刷新时回查数据库；角色变更需重新登录生效
+        return buildToken(userId, username, role, permissionVersion, TOKEN_TYPE_REFRESH, refreshExpire);
+    }
+
+    private String buildToken(Long userId, String username, String role, Integer permissionVersion,
+                              String type, Long expire) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("userId", userId);
         claims.put("username", username);
         if (role != null) {
             claims.put("role", role);
+        }
+        if (permissionVersion != null) {
+            claims.put("permissionVersion", permissionVersion);
         }
         claims.put("type", type);
         claims.put("jti", UUID.randomUUID().toString());
@@ -100,6 +112,11 @@ public class JwtUtils {
     public String getTypeFromToken(String token) {
         Claims claims = parseToken(token);
         return claims != null ? (String) claims.get("type") : null;
+    }
+
+    public Integer getPermissionVersionFromToken(String token) {
+        Claims claims = parseToken(token);
+        return claims != null ? claims.get("permissionVersion", Integer.class) : null;
     }
 
     /** 令牌剩余有效秒数（<=0 表示已过期） */

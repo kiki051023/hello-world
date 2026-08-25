@@ -25,6 +25,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Autowired
     private RedisTokenService redisTokenService;
 
+    private final PermissionVersionPolicy permissionVersionPolicy = new PermissionVersionPolicy();
+
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
@@ -43,6 +45,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
             String username = jwtUtils.getUsernameFromToken(token);
             String role = jwtUtils.getRoleFromToken(token);
+            Long userId = jwtUtils.getUserIdFromToken(token);
+            if (!permissionVersionPolicy.isCurrent(jwtUtils.getPermissionVersionFromToken(token),
+                    redisTokenService.getPermissionVersion(userId))) {
+                filterChain.doFilter(request, response);
+                return;
+            }
             SimpleGrantedAuthority authority = new SimpleGrantedAuthority("ROLE_" + role);
             UsernamePasswordAuthenticationToken authentication =
                     new UsernamePasswordAuthenticationToken(username, null,

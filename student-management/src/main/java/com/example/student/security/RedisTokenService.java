@@ -15,6 +15,7 @@ public class RedisTokenService {
 
     private static final String BLACKLIST_PREFIX = "jwt:blacklist:";
     private static final String REFRESH_PREFIX = "jwt:refresh:";
+    private static final String PERMISSION_VERSION_PREFIX = "auth:permission-version:";
 
     private final StringRedisTemplate redisTemplate;
 
@@ -58,5 +59,17 @@ public class RedisTokenService {
             return;
         }
         redisTemplate.delete(REFRESH_PREFIX + userId);
+    }
+
+    public void storePermissionVersion(Long userId, Integer version) {
+        if (userId != null && version != null) {
+            redisTemplate.opsForValue().set(PERMISSION_VERSION_PREFIX + userId, version.toString());
+        }
+    }
+
+    public Integer getPermissionVersion(Long userId) {
+        if (userId == null) return null;
+        String value = redisTemplate.opsForValue().get(PERMISSION_VERSION_PREFIX + userId);
+        return value == null ? null : Integer.valueOf(value);
     }
 }

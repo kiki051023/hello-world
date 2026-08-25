@@ -39,8 +39,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         if (!passwordEncoder.matches(password, user.getPassword())) {
             throw new BusinessException("密码错误");
         }
-        String accessToken = jwtUtils.generateAccessToken(user.getId(), user.getUsername(), user.getRole());
-        String refreshToken = jwtUtils.generateRefreshToken(user.getId(), user.getUsername(), user.getRole());
+        Integer permissionVersion = user.getPermissionVersion() == null ? 1 : user.getPermissionVersion();
+        String accessToken = jwtUtils.generateAccessToken(user.getId(), user.getUsername(), user.getRole(), permissionVersion);
+        String refreshToken = jwtUtils.generateRefreshToken(user.getId(), user.getUsername(), user.getRole(), permissionVersion);
+        redisTokenService.storePermissionVersion(user.getId(), permissionVersion);
         // 记录刷新令牌，便于登出吊销与刷新校验
         redisTokenService.storeRefreshToken(user.getId(), jwtUtils.getJtiFromToken(refreshToken),
                 jwtUtils.getRefreshExpireSeconds());
