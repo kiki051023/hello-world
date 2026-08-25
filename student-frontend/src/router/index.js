@@ -61,6 +61,12 @@ const routes = [
         meta: { title: '学生事务', icon: 'Notebook', roles: ['ADMIN', 'EDUCATION_ADMIN', 'DEPARTMENT_LEADER', 'COUNSELOR', 'TEACHER', 'STUDENT'] }
       },
       {
+        path: 'practice',
+        name: 'Practice',
+        component: () => import('@/views/Practice.vue'),
+        meta: { title: '实习就业', icon: 'Suitcase', roles: ['ADMIN', 'EDUCATION_ADMIN', 'DEPARTMENT_LEADER', 'COUNSELOR', 'TEACHER', 'PRACTICE_TEACHER', 'STUDENT'] }
+      },
+      {
         path: 'analysis',
         name: 'Analysis',
         component: () => import('@/views/Analysis.vue'),

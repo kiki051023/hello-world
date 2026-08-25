@@ -66,7 +66,8 @@ import {
   TrendCharts,
   Calendar,
   Checked,
-  Notebook
+  Notebook,
+  Suitcase
 } from '@element-plus/icons-vue'
 import { logout } from '@/api/auth'
 
@@ -87,6 +88,7 @@ const allMenus = [
   { index: '/education', title: '教务管理', icon: Calendar, roles: ['ADMIN', 'EDUCATION_ADMIN', 'DEPARTMENT_LEADER', 'COUNSELOR', 'TEACHER', 'STUDENT'] },
   { index: '/score-audit', title: '成绩审核', icon: Checked, roles: ['ADMIN', 'EDUCATION_ADMIN', 'DEPARTMENT_LEADER', 'TEACHER'] },
   { index: '/affairs', title: '学生事务', icon: Notebook, roles: ['ADMIN', 'EDUCATION_ADMIN', 'DEPARTMENT_LEADER', 'COUNSELOR', 'TEACHER', 'STUDENT'] },
+  { index: '/practice', title: '实习就业', icon: Suitcase, roles: ['ADMIN', 'EDUCATION_ADMIN', 'DEPARTMENT_LEADER', 'COUNSELOR', 'TEACHER', 'PRACTICE_TEACHER', 'STUDENT'] },
   { index: '/analysis', title: '成绩分析', icon: TrendCharts, roles: ['ADMIN', 'TEACHER', 'STUDENT'] },
   { index: '/teacher', title: '教师管理', icon: Avatar, roles: ['ADMIN'] }
 ]
