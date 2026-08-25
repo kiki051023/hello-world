@@ -55,6 +55,12 @@ const routes = [
         meta: { title: '成绩审核', icon: 'Checked', roles: ['ADMIN', 'EDUCATION_ADMIN', 'DEPARTMENT_LEADER', 'TEACHER'] }
       },
       {
+        path: 'affairs',
+        name: 'Affairs',
+        component: () => import('@/views/Affairs.vue'),
+        meta: { title: '学生事务', icon: 'Notebook', roles: ['ADMIN', 'EDUCATION_ADMIN', 'DEPARTMENT_LEADER', 'COUNSELOR', 'TEACHER', 'STUDENT'] }
+      },
+      {
         path: 'analysis',
         name: 'Analysis',
         component: () => import('@/views/Analysis.vue'),
