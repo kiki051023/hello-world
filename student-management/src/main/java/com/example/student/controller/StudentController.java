@@ -4,6 +4,7 @@ import com.alibaba.excel.EasyExcel;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.example.student.common.ImportResult;
 import com.example.student.common.PageResult;
+import com.example.student.common.PageQuery;
 import com.example.student.common.Result;
 import com.example.student.entity.Student;
 import com.example.student.excel.StudentExcel;
@@ -12,6 +13,7 @@ import com.example.student.service.StudentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.validation.Valid;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -35,12 +37,11 @@ public class StudentController {
     @PreAuthorize("hasAnyRole('ADMIN','TEACHER')")
     @GetMapping("/page")
     public Result<PageResult<Student>> getStudentPage(
-            @RequestParam(defaultValue = "1") Long current,
-            @RequestParam(defaultValue = "10") Long size,
+            @Valid @ModelAttribute PageQuery pageQuery,
             @RequestParam(required = false) String name,
             @RequestParam(required = false) String studentNo,
             @RequestParam(required = false) Long clazzId) {
-        IPage<Student> page = studentService.getStudentPage(current, size, name, studentNo, clazzId);
+        IPage<Student> page = studentService.getStudentPage(pageQuery.getCurrent(), pageQuery.getSize(), name, studentNo, clazzId);
         return Result.success(PageResult.of(page.getTotal(), page.getRecords(), page.getCurrent(), page.getSize()));
     }
 
