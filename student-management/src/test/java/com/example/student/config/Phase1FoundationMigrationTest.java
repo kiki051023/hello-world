@@ -23,7 +23,7 @@ class Phase1FoundationMigrationTest {
         }
         for (String column : new String[]{"school_id", "department_id", "major_id", "student_status",
                 "education_level", "political_status", "graduation_year", "profile_version", "employee_type",
-                "teacher_type", "employment_status"}) {
+                "teacher_type", "employment_status", "permission_version"}) {
             assertTrue(sql.contains("'" + column + "'"), "missing compatibility column: " + column);
         }
         assertTrue(sql.contains("drop procedure if exists phase1_add_column"));

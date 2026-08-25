@@ -133,6 +133,7 @@ DELIMITER ;
 CALL phase1_add_column('sys_user', 'school_id', 'BIGINT NULL COMMENT ''所属学校''');
 CALL phase1_add_column('sys_user', 'department_id', 'BIGINT NULL COMMENT ''所属系部''');
 CALL phase1_add_column('sys_user', 'employee_type', 'VARCHAR(30) NULL COMMENT ''人员类型''');
+CALL phase1_add_column('sys_user', 'permission_version', 'INT NOT NULL DEFAULT 1 COMMENT ''权限版本''');
 CALL phase1_add_column('clazz', 'school_id', 'BIGINT NULL COMMENT ''所属学校''');
 CALL phase1_add_column('clazz', 'department_id', 'BIGINT NULL COMMENT ''所属系部''');
 CALL phase1_add_column('clazz', 'major_id', 'BIGINT NULL COMMENT ''所属专业''');
