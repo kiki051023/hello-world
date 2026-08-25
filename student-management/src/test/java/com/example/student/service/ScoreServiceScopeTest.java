@@ -10,6 +10,8 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
+import java.util.List;
+import java.util.Map;
 
 class ScoreServiceScopeTest {
 
@@ -28,5 +30,21 @@ class ScoreServiceScopeTest {
         service.getScorePage(1L, 10L, null, null, null);
 
         verify(mapper).selectScorePage(any(Page.class), eq(11L), isNull(), isNull());
+    }
+
+    @Test
+    void scoreExportUsesOneProjectionQueryInsteadOfLoadingRelatedTables() {
+        ScoreMapper mapper = mock(ScoreMapper.class);
+        when(mapper.selectScoreExport(null, null, 3L)).thenReturn(List.of(
+                Map.of("studentNo", "2023001", "studentName", "张三", "courseName", "数学",
+                        "score", new java.math.BigDecimal("90"))));
+
+        ScoreServiceImpl service = new ScoreServiceImpl();
+        ReflectionTestUtils.setField(service, "baseMapper", mapper);
+
+        service.exportScores(null, null, 3L);
+
+        verify(mapper).selectScoreExport(null, null, 3L);
+        verifyNoMoreInteractions(mapper);
     }
 }

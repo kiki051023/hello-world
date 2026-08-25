@@ -89,33 +89,20 @@ public class ScoreServiceImpl extends ServiceImpl<ScoreMapper, Score> implements
 
     @Override
     public List<ScoreExcel> exportScores(Long studentId, Long courseId, Long clazzId) {
-        LambdaQueryWrapper<Score> wrapper = new LambdaQueryWrapper<>();
-        if (studentId != null) wrapper.eq(Score::getStudentId, studentId);
-        if (courseId != null) wrapper.eq(Score::getCourseId, courseId);
-        if (clazzId != null) {
-            List<Long> studentIds = studentMapper.selectList(
-                    new LambdaQueryWrapper<Student>().eq(Student::getClazzId, clazzId))
-                    .stream().map(Student::getId).collect(Collectors.toList());
-            if (studentIds.isEmpty()) {
-                return new ArrayList<>();
-            }
-            wrapper.in(Score::getStudentId, studentIds);
-        }
-        List<Score> list = baseMapper.selectList(wrapper);
-        Map<Long, Student> studentMap = studentMapper.selectList(null).stream()
-                .collect(Collectors.toMap(Student::getId, s -> s, (a, b) -> a));
-        Map<Long, Course> courseMap = courseMapper.selectList(null).stream()
-                .collect(Collectors.toMap(Course::getId, c -> c, (a, b) -> a));
+        List<Map<String, Object>> rows = baseMapper.selectScoreExport(studentId, courseId, clazzId);
         List<ScoreExcel> result = new ArrayList<>();
-        for (Score s : list) {
+        for (Map<String, Object> row : rows) {
             ScoreExcel e = new ScoreExcel();
-            Student st = studentMap.get(s.getStudentId());
-            Course co = courseMap.get(s.getCourseId());
-            e.setStudentNo(st != null ? st.getStudentNo() : null);
-            e.setStudentName(st != null ? st.getName() : null);
-            e.setCourseName(co != null ? co.getCourseName() : null);
-            e.setScore(s.getScore());
-            e.setExamTime(s.getExamTime());
+            e.setStudentNo((String) row.get("studentNo"));
+            e.setStudentName((String) row.get("studentName"));
+            e.setCourseName((String) row.get("courseName"));
+            e.setScore((BigDecimal) row.get("score"));
+            Object examTime = row.get("examTime");
+            if (examTime instanceof java.time.LocalDate localDate) {
+                e.setExamTime(localDate);
+            } else if (examTime instanceof java.sql.Date sqlDate) {
+                e.setExamTime(sqlDate.toLocalDate());
+            }
             result.add(e);
         }
         return result;
