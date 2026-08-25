@@ -58,19 +58,15 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
 
     @Override
     public List<CourseExcel> exportCourses(String courseName, Long teacherId) {
-        LambdaQueryWrapper<Course> wrapper = new LambdaQueryWrapper<>();
-        if (courseName != null && !courseName.isEmpty()) wrapper.like(Course::getCourseName, courseName);
-        if (teacherId != null) wrapper.eq(Course::getTeacherId, teacherId);
-        List<Course> list = baseMapper.selectList(wrapper);
-        Map<Long, String> teacherMap = teacherMapper.selectList(null).stream()
-                .collect(Collectors.toMap(Teacher::getId, Teacher::getName, (a, b) -> a));
+        List<Map<String, Object>> rows = baseMapper.selectCourseExport(courseName, teacherId);
         List<CourseExcel> result = new ArrayList<>();
-        for (Course c : list) {
+        for (Map<String, Object> row : rows) {
             CourseExcel e = new CourseExcel();
-            e.setCourseNo(c.getCourseNo());
-            e.setCourseName(c.getCourseName());
-            e.setCredit(c.getCredit());
-            e.setTeacherName(c.getTeacherId() != null ? teacherMap.get(c.getTeacherId()) : null);
+            e.setCourseNo((String) row.get("courseNo"));
+            e.setCourseName((String) row.get("courseName"));
+            Object credit = row.get("credit");
+            if (credit instanceof Number number) e.setCredit(number.intValue());
+            e.setTeacherName((String) row.get("teacherName"));
             result.add(e);
         }
         return result;

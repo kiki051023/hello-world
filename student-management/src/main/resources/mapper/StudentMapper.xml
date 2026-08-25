@@ -35,4 +35,23 @@
         ORDER BY s.id DESC
     </select>
 
+    <select id="selectStudentExport" resultType="java.util.HashMap">
+        SELECT s.student_no AS studentNo, s.name AS name, s.gender AS gender,
+               s.birthday AS birthday, s.phone AS phone,
+               c.clazz_name AS clazzName, s.address AS address
+        FROM student s
+        LEFT JOIN clazz c ON s.clazz_id = c.id
+        WHERE s.deleted = 0
+        <if test="name != null and name != ''">
+            AND s.name LIKE CONCAT('%', #{name}, '%')
+        </if>
+        <if test="studentNo != null and studentNo != ''">
+            AND s.student_no = #{studentNo}
+        </if>
+        <if test="clazzId != null">
+            AND s.clazz_id = #{clazzId}
+        </if>
+        ORDER BY s.id DESC
+    </select>
+
 </mapper>

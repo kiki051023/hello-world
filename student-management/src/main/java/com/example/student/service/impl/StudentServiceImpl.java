@@ -66,23 +66,19 @@ public class StudentServiceImpl extends ServiceImpl<StudentMapper, Student> impl
 
     @Override
     public List<StudentExcel> exportStudents(String name, String studentNo, Long clazzId) {
-        LambdaQueryWrapper<Student> wrapper = new LambdaQueryWrapper<>();
-        if (name != null && !name.isEmpty()) wrapper.like(Student::getName, name);
-        if (studentNo != null && !studentNo.isEmpty()) wrapper.eq(Student::getStudentNo, studentNo);
-        if (clazzId != null) wrapper.eq(Student::getClazzId, clazzId);
-        List<Student> list = baseMapper.selectList(wrapper);
-        Map<Long, String> clazzMap = clazzMapper.selectList(null).stream()
-                .collect(Collectors.toMap(Clazz::getId, Clazz::getClazzName, (a, b) -> a));
+        List<Map<String, Object>> rows = baseMapper.selectStudentExport(name, studentNo, clazzId);
         List<StudentExcel> result = new ArrayList<>();
-        for (Student s : list) {
+        for (Map<String, Object> row : rows) {
             StudentExcel e = new StudentExcel();
-            e.setStudentNo(s.getStudentNo());
-            e.setName(s.getName());
-            e.setGender(s.getGender());
-            e.setBirthday(s.getBirthday());
-            e.setPhone(s.getPhone());
-            e.setClazzName(s.getClazzId() != null ? clazzMap.get(s.getClazzId()) : null);
-            e.setAddress(s.getAddress());
+            e.setStudentNo((String) row.get("studentNo"));
+            e.setName((String) row.get("name"));
+            e.setGender((String) row.get("gender"));
+            Object birthday = row.get("birthday");
+            if (birthday instanceof java.time.LocalDate localDate) e.setBirthday(localDate);
+            if (birthday instanceof java.sql.Date sqlDate) e.setBirthday(sqlDate.toLocalDate());
+            e.setPhone((String) row.get("phone"));
+            e.setClazzName((String) row.get("clazzName"));
+            e.setAddress((String) row.get("address"));
             result.add(e);
         }
         return result;
