@@ -6,6 +6,7 @@ import com.example.student.mapper.CourseMapper;
 import com.example.student.mapper.ScoreMapper;
 import com.example.student.mapper.StudentMapper;
 import com.example.student.mapper.TeacherMapper;
+import com.example.student.security.StudentDataScopeService;
 import com.example.student.service.StatisticsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -35,6 +36,9 @@ public class StatisticsServiceImpl implements StatisticsService {
     @Autowired
     private ScoreMapper scoreMapper;
 
+    @Autowired
+    private StudentDataScopeService studentDataScopeService;
+
     @Override
     public Map<String, Object> getOverview() {
         Map<String, Object> map = new HashMap<>();
@@ -43,7 +47,7 @@ public class StatisticsServiceImpl implements StatisticsService {
         map.put("courseCount", courseMapper.selectCount(new LambdaQueryWrapper<>()));
         map.put("teacherCount", teacherMapper.selectCount(new LambdaQueryWrapper<>()));
         map.put("scoreCount", scoreMapper.selectCount(new LambdaQueryWrapper<>()));
-        Map<String, BigDecimal> stats = scoreMapper.selectScoreStats(null, null);
+        Map<String, BigDecimal> stats = scoreMapper.selectScoreStats(null, null, null);
         map.put("avgScore", stats.get("avg"));
         map.put("passRate", stats.get("passRate"));
         map.put("maxScore", stats.get("max"));
@@ -82,8 +86,9 @@ public class StatisticsServiceImpl implements StatisticsService {
 
     @Override
     public Map<String, Object> getStudentRadar(Long studentId) {
+        Long scopedStudentId = studentDataScopeService.resolveStudentId(studentId);
         Map<String, Object> map = new HashMap<>();
-        List<Map<String, Object>> list = scoreMapper.selectStudentCourseScores(studentId);
+        List<Map<String, Object>> list = scoreMapper.selectStudentCourseScores(scopedStudentId);
         List<String> courses = new java.util.ArrayList<>();
         List<BigDecimal> scores = new java.util.ArrayList<>();
         String studentName = "";

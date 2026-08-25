@@ -43,6 +43,9 @@
         FROM score sc
         LEFT JOIN student s ON sc.student_id = s.id
         WHERE sc.deleted = 0
+        <if test="studentId != null">
+            AND sc.student_id = #{studentId}
+        </if>
         <if test="courseId != null">
             AND sc.course_id = #{courseId}
         </if>

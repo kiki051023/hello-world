@@ -22,7 +22,7 @@ spring:
       password: ${REDIS_PASSWORD:}
       database: ${REDIS_DB:0}
 
-  mybatis-plus:
+mybatis-plus:
   mapper-locations: classpath*:/mapper/**/*.xml
   type-aliases-package: com.example.student.entity
   configuration:

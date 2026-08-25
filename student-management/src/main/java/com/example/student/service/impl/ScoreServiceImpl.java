@@ -14,6 +14,7 @@ import com.example.student.excel.ScoreExcel;
 import com.example.student.mapper.CourseMapper;
 import com.example.student.mapper.ScoreMapper;
 import com.example.student.mapper.StudentMapper;
+import com.example.student.security.StudentDataScopeService;
 import com.example.student.service.ScoreService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -37,10 +38,14 @@ public class ScoreServiceImpl extends ServiceImpl<ScoreMapper, Score> implements
     @Autowired
     private CourseMapper courseMapper;
 
+    @Autowired
+    private StudentDataScopeService studentDataScopeService;
+
     @Override
     public IPage<Score> getScorePage(Long current, Long size, Long studentId, Long courseId, Long clazzId) {
         Page<Score> page = new Page<>(current, size);
-        return baseMapper.selectScorePage(page, studentId, courseId, clazzId);
+        Long scopedStudentId = studentDataScopeService.resolveStudentId(studentId);
+        return baseMapper.selectScorePage(page, scopedStudentId, courseId, clazzId);
     }
 
     @Override
@@ -60,12 +65,18 @@ public class ScoreServiceImpl extends ServiceImpl<ScoreMapper, Score> implements
 
     @Override
     public Score getScoreById(Long id) {
-        return getById(id);
+        Long scopedStudentId = studentDataScopeService.resolveStudentId(null);
+        LambdaQueryWrapper<Score> wrapper = new LambdaQueryWrapper<Score>().eq(Score::getId, id);
+        if (scopedStudentId != null) {
+            wrapper.eq(Score::getStudentId, scopedStudentId);
+        }
+        return baseMapper.selectOne(wrapper);
     }
 
     @Override
     public Map<String, BigDecimal> getScoreStats(Long courseId, Long clazzId) {
-        Map<String, BigDecimal> stats = baseMapper.selectScoreStats(courseId, clazzId);
+        Long scopedStudentId = studentDataScopeService.resolveStudentId(null);
+        Map<String, BigDecimal> stats = baseMapper.selectScoreStats(scopedStudentId, courseId, clazzId);
         if (stats == null) {
             stats = new HashMap<>();
             stats.put("avg", BigDecimal.ZERO);

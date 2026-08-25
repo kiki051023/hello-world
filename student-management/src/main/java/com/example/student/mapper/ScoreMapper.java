@@ -22,7 +22,8 @@ public interface ScoreMapper extends BaseMapper<Score> {
      * 成绩统计：平均分、最高分、最低分、及格率(%)。
      * 支持按课程、班级过滤（班级需关联 student 表）。
      */
-    Map<String, BigDecimal> selectScoreStats(@Param("courseId") Long courseId,
+    Map<String, BigDecimal> selectScoreStats(@Param("studentId") Long studentId,
+                                             @Param("courseId") Long courseId,
                                              @Param("clazzId") Long clazzId);
 
     /** 成绩分段分布：[0,60) / [60,70) / [70,80) / [80,90) / [90,100]，返回 bucket(0-4) 与 cnt */
