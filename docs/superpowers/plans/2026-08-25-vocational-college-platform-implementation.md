@@ -158,17 +158,17 @@
 - Create: practice/company/position/log/evaluation modules across backend and frontend
 - Create: attachment object module
 
-- [ ] 实现实习计划、岗位分配、指导关系、周记、评价和实习成绩。
-- [ ] 附件通过对象 ID 和权限校验下载，不暴露物理路径。
-- [ ] 指导教师仅查看负责学生。
+- [x] 实现实习计划、岗位分配、指导关系、周记、评价和实习成绩。
+- [x] 附件通过对象 ID 和权限校验下载，不暴露物理路径。
+- [x] 指导教师仅查看负责学生。
 
 ### Task 11: 就业与证书
 
 **Files:**
 - Create: employment and certificate modules across backend and frontend
 
-- [ ] 按毕业年度、专业、班级统计就业去向。
-- [ ] 保存证书类型、等级、颁发时间和验证信息。
+- [x] 按毕业年度、专业、班级统计就业去向。
+- [x] 保存证书类型、等级、颁发时间和验证信息。
 
 ## 阶段五：统计与运维
 
