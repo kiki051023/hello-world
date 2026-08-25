@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.example.student.common.ImportLimits;
 import com.example.student.common.ImportResult;
 import com.example.student.entity.Clazz;
 import com.example.student.entity.Student;
@@ -15,6 +16,7 @@ import com.example.student.mapper.StudentMapper;
 import com.example.student.service.StudentService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -66,37 +68,39 @@ public class StudentServiceImpl extends ServiceImpl<StudentMapper, Student> impl
 
     @Override
     public List<StudentExcel> exportStudents(String name, String studentNo, Long clazzId) {
-        LambdaQueryWrapper<Student> wrapper = new LambdaQueryWrapper<>();
-        if (name != null && !name.isEmpty()) wrapper.like(Student::getName, name);
-        if (studentNo != null && !studentNo.isEmpty()) wrapper.eq(Student::getStudentNo, studentNo);
-        if (clazzId != null) wrapper.eq(Student::getClazzId, clazzId);
-        List<Student> list = baseMapper.selectList(wrapper);
-        Map<Long, String> clazzMap = clazzMapper.selectList(null).stream()
-                .collect(Collectors.toMap(Clazz::getId, Clazz::getClazzName, (a, b) -> a));
+        List<Map<String, Object>> rows = baseMapper.selectStudentExport(name, studentNo, clazzId);
         List<StudentExcel> result = new ArrayList<>();
-        for (Student s : list) {
+        for (Map<String, Object> row : rows) {
             StudentExcel e = new StudentExcel();
-            e.setStudentNo(s.getStudentNo());
-            e.setName(s.getName());
-            e.setGender(s.getGender());
-            e.setBirthday(s.getBirthday());
-            e.setPhone(s.getPhone());
-            e.setClazzName(s.getClazzId() != null ? clazzMap.get(s.getClazzId()) : null);
-            e.setAddress(s.getAddress());
+            e.setStudentNo((String) row.get("studentNo"));
+            e.setName((String) row.get("name"));
+            e.setGender((String) row.get("gender"));
+            Object birthday = row.get("birthday");
+            if (birthday instanceof java.time.LocalDate localDate) e.setBirthday(localDate);
+            if (birthday instanceof java.sql.Date sqlDate) e.setBirthday(sqlDate.toLocalDate());
+            e.setPhone((String) row.get("phone"));
+            e.setClazzName((String) row.get("clazzName"));
+            e.setAddress((String) row.get("address"));
             result.add(e);
         }
         return result;
     }
 
     @Override
+    @Transactional
     public ImportResult<StudentExcel> importStudents(MultipartFile file) {
         ImportResult<StudentExcel> result = new ImportResult<>();
         try {
             List<?> rows = EasyExcel.read(file.getInputStream()).head(StudentExcel.class).sheet().doReadSync();
             List<StudentExcel> data = rows.stream().map(o -> (StudentExcel) o).collect(Collectors.toList());
+            ImportLimits.requireAllowedRowCount(data.size());
             result.setTotal(data.size());
-            Set<String> existingNos = baseMapper.selectList(null).stream()
-                    .map(Student::getStudentNo).collect(Collectors.toSet());
+            List<String> studentNos = data.stream().map(StudentExcel::getStudentNo)
+                    .filter(no -> no != null && !no.isBlank()).distinct().toList();
+            Set<String> existingNos = studentNos.isEmpty() ? new java.util.HashSet<>() :
+                    baseMapper.selectIdsByStudentNos(studentNos).stream()
+                            .map(row -> (String) row.get("studentNo")).collect(Collectors.toSet());
+            Set<String> importedNos = new java.util.HashSet<>();
             Map<String, Long> clazzNameMap = clazzMapper.selectList(null).stream()
                     .collect(Collectors.toMap(Clazz::getClazzName, Clazz::getId, (a, b) -> a));
             List<Student> entities = new ArrayList<>();
@@ -109,7 +113,7 @@ public class StudentServiceImpl extends ServiceImpl<StudentMapper, Student> impl
                     result.getFailRows().add(e);
                     continue;
                 }
-                if (existingNos.contains(e.getStudentNo())) {
+                if (!importedNos.add(e.getStudentNo()) || existingNos.contains(e.getStudentNo())) {
                     e.setErrorMessage("学号已存在(" + e.getStudentNo() + ")");
                     result.getFailRows().add(e);
                     continue;

@@ -49,7 +49,7 @@ public class ScoreController {
     @PreAuthorize("hasAnyRole('ADMIN','TEACHER','STUDENT')")
     @GetMapping("/{id}")
     public Result<Score> getScoreById(@PathVariable Long id) {
-        return Result.success(scoreService.getById(id));
+        return Result.success(scoreService.getScoreById(id));
     }
 
     @Operation(summary = "新增成绩")

@@ -34,6 +34,42 @@
         ORDER BY sc.id DESC
     </select>
 
+    <select id="selectScoreExport" resultType="java.util.HashMap">
+        SELECT s.student_no AS studentNo,
+               s.name AS studentName,
+               c.course_name AS courseName,
+               sc.score AS score,
+               sc.exam_time AS examTime
+        FROM score sc
+        JOIN student s ON sc.student_id = s.id
+        JOIN course c ON sc.course_id = c.id
+        WHERE sc.deleted = 0
+        <if test="studentId != null">
+            AND sc.student_id = #{studentId}
+        </if>
+        <if test="courseId != null">
+            AND sc.course_id = #{courseId}
+        </if>
+        <if test="clazzId != null">
+            AND s.clazz_id = #{clazzId}
+        </if>
+        ORDER BY sc.id DESC
+    </select>
+
+    <select id="selectExistingStudentCoursePairs" resultType="java.util.HashMap">
+        SELECT student_id AS studentId, course_id AS courseId
+        FROM score
+        WHERE deleted = 0
+          AND student_id IN
+        <foreach collection="studentIds" item="studentId" open="(" separator="," close=")">
+            #{studentId}
+        </foreach>
+          AND course_id IN
+        <foreach collection="courseIds" item="courseId" open="(" separator="," close=")">
+            #{courseId}
+        </foreach>
+    </select>
+
     <select id="selectScoreStats" resultType="java.util.HashMap">
         SELECT
             COALESCE(ROUND(AVG(sc.score), 2), 0) AS avg,
@@ -43,6 +79,9 @@
         FROM score sc
         LEFT JOIN student s ON sc.student_id = s.id
         WHERE sc.deleted = 0
+        <if test="studentId != null">
+            AND sc.student_id = #{studentId}
+        </if>
         <if test="courseId != null">
             AND sc.course_id = #{courseId}
         </if>

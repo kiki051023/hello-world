@@ -46,7 +46,7 @@ const routes = [
         path: 'analysis',
         name: 'Analysis',
         component: () => import('@/views/Analysis.vue'),
-        meta: { title: '成绩分析', icon: 'TrendCharts', roles: ['ADMIN', 'TEACHER', 'STUDENT'] }
+        meta: { title: '成绩分析', icon: 'TrendCharts', roles: ['ADMIN', 'TEACHER'] }
       },
       {
         path: 'teacher',

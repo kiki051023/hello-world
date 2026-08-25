@@ -25,6 +25,9 @@ public class User implements Serializable {
 
     private Integer status;
 
+    /** Incremented whenever roles or data scopes change, invalidating stale sessions. */
+    private Integer permissionVersion;
+
     @TableLogic
     private Integer deleted;
 
