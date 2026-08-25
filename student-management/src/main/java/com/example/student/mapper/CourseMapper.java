@@ -7,6 +7,7 @@ import com.example.student.entity.Course;
 import com.example.student.security.DataScopeFilter;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
 
 import java.util.List;
 import java.util.Map;
@@ -23,4 +24,17 @@ public interface CourseMapper extends BaseMapper<Course> {
 
     List<Map<String, Object>> selectIdsByCourseNames(@Param("courseNames") List<String> courseNames,
                                                      @Param("scope") DataScopeFilter scope);
+
+    /** 范围内课程计数（聚合替代全表加载） */
+    @Select("""
+            <script>
+            SELECT COUNT(*) FROM course c WHERE c.deleted = 0
+            <if test="scope != null and !scope.unrestricted">
+              AND ( (scope.teacherId != null AND c.teacher_id = scope.teacherId)
+                 OR (scope.hasCourseIds AND c.id IN
+                     <foreach collection="scope.courseIds" item="id" open="(" separator="," close=")">#{id}</foreach>) )
+            </if>
+            </script>
+            """)
+    long countScoped(@Param("scope") DataScopeFilter scope);
 }

@@ -26,4 +26,18 @@ public interface StudentMapper extends BaseMapper<Student> {
 
     List<Map<String, Object>> selectIdsByStudentNos(@Param("studentNos") List<String> studentNos,
                                                     @Param("scope") DataScopeFilter scope);
+
+    /** 范围内学生计数（聚合替代全表加载） */
+    @org.apache.ibatis.annotations.Select("""
+            <script>
+            SELECT COUNT(*) FROM student s WHERE s.deleted = 0
+            <if test="scope != null and !scope.unrestricted">
+              AND ( (scope.selfOnly AND s.user_id = scope.userId)
+                 OR (scope.departmentId != null AND s.department_id = scope.departmentId)
+                 OR (scope.hasClassIds AND s.clazz_id IN
+                     <foreach collection="scope.classIds" item="id" open="(" separator="," close=")">#{id}</foreach>) )
+            </if>
+            </script>
+            """)
+    long countScoped(@Param("scope") DataScopeFilter scope);
 }
