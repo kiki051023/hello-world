@@ -239,4 +239,53 @@
         ORDER BY c.course_name
     </select>
 
+    <!-- 学生学分聚合：仅有效成绩（active=1 且 APPROVED），每门课取最高分，及格计学分 -->
+    <select id="selectStudentCreditSummary" resultType="java.util.HashMap">
+        SELECT COALESCE(SUM(CASE WHEN t.best_score &gt;= 60 THEN c.credit ELSE 0 END), 0) AS earnedCredits,
+               COALESCE(SUM(c.credit), 0) AS totalCredits,
+               SUM(CASE WHEN t.best_score &gt;= 60 THEN 1 ELSE 0 END) AS passCount,
+               SUM(CASE WHEN t.best_score &lt; 60 THEN 1 ELSE 0 END) AS failCount,
+               COUNT(*) AS courseCount
+        FROM (
+            SELECT sc.course_id, MAX(sc.score) AS best_score
+            FROM score sc
+            WHERE sc.deleted = 0 AND sc.active = 1 AND sc.score_status = 'APPROVED'
+              AND sc.student_id = #{studentId}
+            <if test="termId != null">
+              AND EXISTS (SELECT 1 FROM course_term ct WHERE ct.id = sc.course_term_id AND ct.term_id = #{termId})
+            </if>
+            GROUP BY sc.course_id
+        ) t
+        JOIN course c ON c.id = t.course_id AND c.deleted = 0
+    </select>
+
+    <!-- 班级维度学分汇总：每生一行，每课取有效最高分，避免循环查询 -->
+    <select id="selectCreditSummaryByClazz" resultType="java.util.HashMap">
+        SELECT s.id AS studentId,
+               s.student_no AS studentNo,
+               s.name AS studentName,
+               COALESCE(SUM(CASE WHEN t.best_score &gt;= 60 THEN c.credit ELSE 0 END), 0) AS earnedCredits,
+               COUNT(t.course_id) AS courseCount,
+               SUM(CASE WHEN t.best_score &lt; 60 THEN 1 ELSE 0 END) AS failCount
+        FROM student s
+        LEFT JOIN (
+            SELECT sc.student_id, sc.course_id, MAX(sc.score) AS best_score
+            FROM score sc
+            WHERE sc.deleted = 0 AND sc.active = 1 AND sc.score_status = 'APPROVED'
+            GROUP BY sc.student_id, sc.course_id
+        ) t ON t.student_id = s.id
+        LEFT JOIN course c ON c.id = t.course_id AND c.deleted = 0
+        WHERE s.deleted = 0
+          AND s.clazz_id = #{clazzId}
+        <if test="termId != null">
+          AND (t.course_id IS NULL OR EXISTS (
+               SELECT 1 FROM score sc2 JOIN course_term ct2 ON ct2.id = sc2.course_term_id
+               WHERE sc2.student_id = s.id AND sc2.course_id = t.course_id
+                 AND sc2.deleted = 0 AND sc2.active = 1 AND sc2.score_status = 'APPROVED'
+                 AND ct2.term_id = #{termId}))
+        </if>
+        GROUP BY s.id, s.student_no, s.name
+        ORDER BY s.student_no
+    </select>
+
 </mapper>

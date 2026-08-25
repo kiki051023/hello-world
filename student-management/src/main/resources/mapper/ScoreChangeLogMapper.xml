@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.student.mapper.ScoreChangeLogMapper">
+
+    <select id="selectByScoreId" resultType="com.example.student.entity.ScoreChangeLog">
+        SELECT id, score_id AS scoreId, change_type AS changeType, old_score AS oldScore,
+               new_score AS newScore, reason, operator_id AS operatorId, operator_name AS operatorName,
+               create_time AS createTime
+        FROM score_change_log
+        WHERE score_id = #{scoreId}
+        ORDER BY id DESC
+    </select>
+
+</mapper>

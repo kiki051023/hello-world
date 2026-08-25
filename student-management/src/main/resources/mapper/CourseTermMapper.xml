@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.student.mapper.CourseTermMapper">
+
+    <sql id="courseTermScope">
+        <if test="scope != null and !scope.unrestricted">
+            AND ( (scope.departmentId != null AND c.department_id = scope.departmentId)
+               OR (scope.teacherId != null AND c.teacher_id = scope.teacherId)
+               OR (scope.hasCourseIds AND ct.course_id IN <foreach collection="scope.courseIds" item="id" open="(" separator="," close=")">#{id}</foreach>) )
+        </if>
+    </sql>
+
+    <select id="selectCourseTermPage" resultType="java.util.HashMap">
+        SELECT ct.id AS id,
+               ct.term_id AS termId,
+               at_.term_name AS termName,
+               ct.course_id AS courseId,
+               c.course_name AS courseName,
+               ct.capacity AS capacity,
+               (SELECT COUNT(*) FROM course_selection cs
+                 WHERE cs.course_term_id = ct.id AND cs.deleted = 0 AND cs.status = 1) AS selectedCount,
+               ct.status AS status
+        FROM course_term ct
+        JOIN course c ON ct.course_id = c.id AND c.deleted = 0
+        JOIN academic_term at_ ON ct.term_id = at_.id
+        WHERE ct.deleted = 0
+        <include refid="courseTermScope"/>
+        <if test="courseId != null">AND ct.course_id = #{courseId}</if>
+        <if test="termId != null">AND ct.term_id = #{termId}</if>
+        ORDER BY ct.id DESC
+        LIMIT #{offset}, #{size}
+    </select>
+
+    <select id="countCourseTermPage" resultType="long">
+        SELECT COUNT(*)
+        FROM course_term ct
+        JOIN course c ON ct.course_id = c.id AND c.deleted = 0
+        WHERE ct.deleted = 0
+        <include refid="courseTermScope"/>
+        <if test="courseId != null">AND ct.course_id = #{courseId}</if>
+        <if test="termId != null">AND ct.term_id = #{termId}</if>
+    </select>
+
+</mapper>

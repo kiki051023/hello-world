@@ -67,4 +67,12 @@ public interface ScoreMapper extends BaseMapper<Score> {
 
     /** 指定学生的各课程成绩（用于雷达图） */
     List<Map<String, Object>> selectStudentCourseScores(@Param("studentId") Long studentId);
+
+    /** 学生学分聚合：仅统计有效成绩（active=1 且 APPROVED），返回 earnedCredits/totalCredits/passCount/failCount */
+    Map<String, Object> selectStudentCreditSummary(@Param("studentId") Long studentId,
+                                                   @Param("termId") Long termId);
+
+    /** 按学生列表批量计算学分（用于班级/课程维度汇总） */
+    List<Map<String, Object>> selectCreditSummaryByClazz(@Param("clazzId") Long clazzId,
+                                                         @Param("termId") Long termId);
 }

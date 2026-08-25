@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.student.mapper.CourseSelectionMapper">
+
+    <select id="selectSelectionPage" resultType="java.util.HashMap">
+        SELECT cs.id AS id,
+               cs.course_term_id AS courseTermId,
+               at_.term_name AS termName,
+               c.course_name AS courseName,
+               cs.student_id AS studentId,
+               s.student_no AS studentNo,
+               s.name AS studentName,
+               cs.selection_type AS selectionType,
+               cs.status AS status
+        FROM course_selection cs
+        JOIN course_term ct ON cs.course_term_id = ct.id AND ct.deleted = 0
+        JOIN academic_term at_ ON ct.term_id = at_.id
+        JOIN course c ON ct.course_id = c.id AND c.deleted = 0
+        JOIN student s ON cs.student_id = s.id AND s.deleted = 0
+        WHERE cs.deleted = 0
+        <if test="scope != null and !scope.unrestricted">
+            AND ( (scope.selfOnly AND s.user_id = scope.userId)
+               OR (scope.departmentId != null AND s.department_id = scope.departmentId)
+               OR (scope.hasClassIds AND s.clazz_id IN <foreach collection="scope.classIds" item="id" open="(" separator="," close=")">#{id}</foreach>) )
+        </if>
+        <if test="courseTermId != null">AND cs.course_term_id = #{courseTermId}</if>
+        <if test="studentId != null">AND cs.student_id = #{studentId}</if>
+        ORDER BY cs.id DESC
+        LIMIT #{offset}, #{size}
+    </select>
+
+    <select id="countSelectionPage" resultType="long">
+        SELECT COUNT(*)
+        FROM course_selection cs
+        JOIN student s ON cs.student_id = s.id AND s.deleted = 0
+        WHERE cs.deleted = 0
+        <if test="scope != null and !scope.unrestricted">
+            AND ( (scope.selfOnly AND s.user_id = scope.userId)
+               OR (scope.departmentId != null AND s.department_id = scope.departmentId)
+               OR (scope.hasClassIds AND s.clazz_id IN <foreach collection="scope.classIds" item="id" open="(" separator="," close=")">#{id}</foreach>) )
+        </if>
+        <if test="courseTermId != null">AND cs.course_term_id = #{courseTermId}</if>
+        <if test="studentId != null">AND cs.student_id = #{studentId}</if>
+    </select>
+
+</mapper>
