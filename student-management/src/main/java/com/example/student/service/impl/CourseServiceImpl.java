@@ -83,8 +83,12 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
             List<CourseExcel> data = rows.stream().map(o -> (CourseExcel) o).collect(Collectors.toList());
             ImportLimits.requireAllowedRowCount(data.size());
             result.setTotal(data.size());
-            Set<String> existing = baseMapper.selectList(null).stream()
-                    .map(Course::getCourseName).collect(Collectors.toSet());
+            List<String> courseNames = data.stream().map(CourseExcel::getCourseName)
+                    .filter(name -> name != null && !name.isBlank()).distinct().toList();
+            Set<String> existing = courseNames.isEmpty() ? new java.util.HashSet<>() :
+                    baseMapper.selectIdsByCourseNames(courseNames).stream()
+                            .map(row -> (String) row.get("courseName")).collect(Collectors.toSet());
+            Set<String> importedNames = new java.util.HashSet<>();
             Map<String, Long> teacherNameMap = teacherMapper.selectList(null).stream()
                     .collect(Collectors.toMap(Teacher::getName, Teacher::getId, (a, b) -> a));
             List<Course> entities = new ArrayList<>();
@@ -94,7 +98,7 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
                     result.getFailRows().add(e);
                     continue;
                 }
-                if (existing.contains(e.getCourseName())) {
+                if (!importedNames.add(e.getCourseName()) || existing.contains(e.getCourseName())) {
                     e.setErrorMessage("课程已存在(" + e.getCourseName() + ")");
                     result.getFailRows().add(e);
                     continue;

@@ -95,8 +95,12 @@ public class StudentServiceImpl extends ServiceImpl<StudentMapper, Student> impl
             List<StudentExcel> data = rows.stream().map(o -> (StudentExcel) o).collect(Collectors.toList());
             ImportLimits.requireAllowedRowCount(data.size());
             result.setTotal(data.size());
-            Set<String> existingNos = baseMapper.selectList(null).stream()
-                    .map(Student::getStudentNo).collect(Collectors.toSet());
+            List<String> studentNos = data.stream().map(StudentExcel::getStudentNo)
+                    .filter(no -> no != null && !no.isBlank()).distinct().toList();
+            Set<String> existingNos = studentNos.isEmpty() ? new java.util.HashSet<>() :
+                    baseMapper.selectIdsByStudentNos(studentNos).stream()
+                            .map(row -> (String) row.get("studentNo")).collect(Collectors.toSet());
+            Set<String> importedNos = new java.util.HashSet<>();
             Map<String, Long> clazzNameMap = clazzMapper.selectList(null).stream()
                     .collect(Collectors.toMap(Clazz::getClazzName, Clazz::getId, (a, b) -> a));
             List<Student> entities = new ArrayList<>();
@@ -109,7 +113,7 @@ public class StudentServiceImpl extends ServiceImpl<StudentMapper, Student> impl
                     result.getFailRows().add(e);
                     continue;
                 }
-                if (existingNos.contains(e.getStudentNo())) {
+                if (!importedNos.add(e.getStudentNo()) || existingNos.contains(e.getStudentNo())) {
                     e.setErrorMessage("学号已存在(" + e.getStudentNo() + ")");
                     result.getFailRows().add(e);
                     continue;
