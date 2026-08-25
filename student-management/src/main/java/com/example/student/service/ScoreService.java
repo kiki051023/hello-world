@@ -28,4 +28,7 @@ public interface ScoreService extends IService<Score> {
     List<ScoreExcel> exportScores(Long studentId, Long courseId, Long clazzId);
 
     ImportResult<ScoreExcel> importScores(MultipartFile file);
+
+    /** 每生有效不及格课程数（active=1 且 APPROVED，每课取最高分），供预警规则扫描 */
+    Map<Long, Integer> countFailCoursesPerStudent();
 }

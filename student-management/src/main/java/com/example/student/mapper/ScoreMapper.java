@@ -75,4 +75,7 @@ public interface ScoreMapper extends BaseMapper<Score> {
     /** 按学生列表批量计算学分（用于班级/课程维度汇总） */
     List<Map<String, Object>> selectCreditSummaryByClazz(@Param("clazzId") Long clazzId,
                                                          @Param("termId") Long termId);
+
+    /** 每生有效不及格课程数（预警用） */
+    List<Map<String, Object>> countFailCoursesPerStudent();
 }

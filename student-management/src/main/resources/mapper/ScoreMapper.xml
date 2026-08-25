@@ -288,4 +288,17 @@
         ORDER BY s.student_no
     </select>
 
+    <!-- 每生有效不及格课程数：仅 active=1 且 APPROVED，每课取最高分 -->
+    <select id="countFailCoursesPerStudent" resultType="java.util.HashMap">
+        SELECT t.student_id AS studentId, COUNT(*) AS failCount
+        FROM (
+            SELECT sc.student_id, sc.course_id, MAX(sc.score) AS best_score
+            FROM score sc
+            WHERE sc.deleted = 0 AND sc.active = 1 AND sc.score_status = 'APPROVED'
+            GROUP BY sc.student_id, sc.course_id
+        ) t
+        WHERE t.best_score &lt; 60
+        GROUP BY t.student_id
+    </select>
+
 </mapper>

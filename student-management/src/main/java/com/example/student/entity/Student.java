@@ -38,6 +38,9 @@ public class Student implements Serializable {
 
     private Long userId;
 
+    /** 学籍状态：READING在读/SUSPENDED休学/GRADUATED毕业/TRANSFERRED转出等 */
+    private String studentStatus;
+
     @TableLogic
     private Integer deleted;
 

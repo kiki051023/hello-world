@@ -217,6 +217,19 @@ public class ScoreServiceImpl extends ServiceImpl<ScoreMapper, Score> implements
         return result;
     }
 
+    @Override
+    public Map<Long, Integer> countFailCoursesPerStudent() {
+        Map<Long, Integer> result = new HashMap<>();
+        for (Map<String, Object> row : baseMapper.countFailCoursesPerStudent()) {
+            Object sid = row.get("studentId");
+            Object cnt = row.get("failCount");
+            if (sid instanceof Number n && cnt instanceof Number c) {
+                result.put(n.longValue(), c.intValue());
+            }
+        }
+        return result;
+    }
+
     private DataScopeFilter currentScope() {
         return dataScopeService == null ? null : dataScopeService.currentFilter();
     }
