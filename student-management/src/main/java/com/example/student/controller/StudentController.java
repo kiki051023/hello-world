@@ -7,9 +7,11 @@ import com.example.student.common.PageResult;
 import com.example.student.common.PageQuery;
 import com.example.student.common.Result;
 import com.example.student.entity.Student;
+import com.example.student.entity.ImportTask;
 import com.example.student.excel.StudentExcel;
 import com.example.student.exception.BusinessException;
 import com.example.student.service.StudentService;
+import com.example.student.service.ImportTaskService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,6 +34,9 @@ public class StudentController {
 
     @Autowired
     private StudentService studentService;
+
+    @Autowired
+    private ImportTaskService importTaskService;
 
     @Operation(summary = "学生列表（分页）")
     @PreAuthorize("hasAnyRole('ADMIN','TEACHER')")
@@ -98,7 +103,15 @@ public class StudentController {
         if (file == null || file.isEmpty()) {
             throw new BusinessException("文件不能为空");
         }
-        return Result.success(studentService.importStudents(file));
+        ImportTask task = importTaskService.start("student", file.getOriginalFilename(), null);
+        try {
+            ImportResult<StudentExcel> result = studentService.importStudents(file);
+            importTaskService.complete(task.getId(), result.getTotal(), result.getSuccessCount(), result.getFailRows().size());
+            return Result.success(result);
+        } catch (RuntimeException ex) {
+            importTaskService.fail(task.getId(), ex.getMessage());
+            throw ex;
+        }
     }
 
     @Operation(summary = "导出导入失败明细(Excel)")

@@ -7,9 +7,11 @@ import com.example.student.common.PageResult;
 import com.example.student.common.PageQuery;
 import com.example.student.common.Result;
 import com.example.student.entity.Clazz;
+import com.example.student.entity.ImportTask;
 import com.example.student.excel.ClazzExcel;
 import com.example.student.exception.BusinessException;
 import com.example.student.service.ClazzService;
+import com.example.student.service.ImportTaskService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,6 +34,9 @@ public class ClazzController {
 
     @Autowired
     private ClazzService clazzService;
+
+    @Autowired
+    private ImportTaskService importTaskService;
 
     @Operation(summary = "班级列表（分页）")
     @PreAuthorize("hasAnyRole('ADMIN','TEACHER','STUDENT')")
@@ -103,7 +108,15 @@ public class ClazzController {
         if (file == null || file.isEmpty()) {
             throw new BusinessException("文件不能为空");
         }
-        return Result.success(clazzService.importClazzs(file));
+        ImportTask task = importTaskService.start("clazz", file.getOriginalFilename(), null);
+        try {
+            ImportResult<ClazzExcel> result = clazzService.importClazzs(file);
+            importTaskService.complete(task.getId(), result.getTotal(), result.getSuccessCount(), result.getFailRows().size());
+            return Result.success(result);
+        } catch (RuntimeException ex) {
+            importTaskService.fail(task.getId(), ex.getMessage());
+            throw ex;
+        }
     }
 
     @Operation(summary = "导出导入失败明细(Excel)")

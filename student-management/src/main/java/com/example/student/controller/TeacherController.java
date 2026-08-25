@@ -4,9 +4,11 @@ import com.alibaba.excel.EasyExcel;
 import com.example.student.common.ImportResult;
 import com.example.student.common.Result;
 import com.example.student.entity.Teacher;
+import com.example.student.entity.ImportTask;
 import com.example.student.excel.TeacherExcel;
 import com.example.student.exception.BusinessException;
 import com.example.student.service.TeacherService;
+import com.example.student.service.ImportTaskService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +30,9 @@ public class TeacherController {
 
     @Autowired
     private TeacherService teacherService;
+
+    @Autowired
+    private ImportTaskService importTaskService;
 
     @Operation(summary = "所有教师列表")
     @PreAuthorize("hasAnyRole('ADMIN','TEACHER')")
@@ -86,7 +91,15 @@ public class TeacherController {
         if (file == null || file.isEmpty()) {
             throw new BusinessException("文件不能为空");
         }
-        return Result.success(teacherService.importTeachers(file));
+        ImportTask task = importTaskService.start("teacher", file.getOriginalFilename(), null);
+        try {
+            ImportResult<TeacherExcel> result = teacherService.importTeachers(file);
+            importTaskService.complete(task.getId(), result.getTotal(), result.getSuccessCount(), result.getFailRows().size());
+            return Result.success(result);
+        } catch (RuntimeException ex) {
+            importTaskService.fail(task.getId(), ex.getMessage());
+            throw ex;
+        }
     }
 
     @Operation(summary = "导出导入失败明细(Excel)")

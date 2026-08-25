@@ -7,9 +7,11 @@ import com.example.student.common.PageResult;
 import com.example.student.common.PageQuery;
 import com.example.student.common.Result;
 import com.example.student.entity.Score;
+import com.example.student.entity.ImportTask;
 import com.example.student.excel.ScoreExcel;
 import com.example.student.exception.BusinessException;
 import com.example.student.service.ScoreService;
+import com.example.student.service.ImportTaskService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,6 +35,9 @@ public class ScoreController {
 
     @Autowired
     private ScoreService scoreService;
+
+    @Autowired
+    private ImportTaskService importTaskService;
 
     @Operation(summary = "成绩列表（分页）")
     @PreAuthorize("hasAnyRole('ADMIN','TEACHER','STUDENT')")
@@ -108,7 +113,15 @@ public class ScoreController {
         if (file == null || file.isEmpty()) {
             throw new BusinessException("文件不能为空");
         }
-        return Result.success(scoreService.importScores(file));
+        ImportTask task = importTaskService.start("score", file.getOriginalFilename(), null);
+        try {
+            ImportResult<ScoreExcel> result = scoreService.importScores(file);
+            importTaskService.complete(task.getId(), result.getTotal(), result.getSuccessCount(), result.getFailRows().size());
+            return Result.success(result);
+        } catch (RuntimeException ex) {
+            importTaskService.fail(task.getId(), ex.getMessage());
+            throw ex;
+        }
     }
 
     @Operation(summary = "导出导入失败明细(Excel)")
