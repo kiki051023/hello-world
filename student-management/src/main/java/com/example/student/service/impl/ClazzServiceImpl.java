@@ -86,10 +86,19 @@ public class ClazzServiceImpl extends ServiceImpl<ClazzMapper, Clazz> implements
             List<ClazzExcel> data = rows.stream().map(o -> (ClazzExcel) o).collect(Collectors.toList());
             ImportLimits.requireAllowedRowCount(data.size());
             result.setTotal(data.size());
-            Set<String> existing = baseMapper.selectList(null).stream()
-                    .map(Clazz::getClazzName).collect(Collectors.toSet());
-            Map<String, Long> teacherNameMap = teacherMapper.selectList(null).stream()
-                    .collect(Collectors.toMap(Teacher::getName, Teacher::getId, (a, b) -> a));
+            List<String> clazzNames = data.stream().map(ClazzExcel::getClazzName)
+                    .filter(name -> name != null && !name.isBlank()).distinct().toList();
+            Set<String> existing = clazzNames.isEmpty() ? new java.util.HashSet<>() :
+                    baseMapper.selectList(new LambdaQueryWrapper<Clazz>()
+                                    .select(Clazz::getClazzName).in(Clazz::getClazzName, clazzNames))
+                            .stream().map(Clazz::getClazzName).collect(Collectors.toSet());
+            List<String> teacherNames = data.stream().map(ClazzExcel::getHeadTeacherName)
+                    .filter(name -> name != null && !name.isBlank()).distinct().toList();
+            Map<String, Long> teacherNameMap = teacherNames.isEmpty() ? new java.util.HashMap<>() :
+                    teacherMapper.selectList(new LambdaQueryWrapper<Teacher>()
+                                    .select(Teacher::getId, Teacher::getName).in(Teacher::getName, teacherNames))
+                            .stream().collect(Collectors.toMap(Teacher::getName, Teacher::getId, (a, b) -> a));
+            Set<String> importedNames = new java.util.HashSet<>();
             List<Clazz> entities = new ArrayList<>();
             for (ClazzExcel e : data) {
                 if (e.getClazzName() == null || e.getClazzName().isEmpty()) {
@@ -97,7 +106,7 @@ public class ClazzServiceImpl extends ServiceImpl<ClazzMapper, Clazz> implements
                     result.getFailRows().add(e);
                     continue;
                 }
-                if (existing.contains(e.getClazzName())) {
+                if (!importedNames.add(e.getClazzName()) || existing.contains(e.getClazzName())) {
                     e.setErrorMessage("班级已存在(" + e.getClazzName() + ")");
                     result.getFailRows().add(e);
                     continue;

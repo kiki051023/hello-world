@@ -1,6 +1,7 @@
 package com.example.student.service.impl;
 
 import com.alibaba.excel.EasyExcel;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.student.common.ImportLimits;
 import com.example.student.common.ImportResult;
@@ -66,8 +67,13 @@ public class TeacherServiceImpl extends ServiceImpl<TeacherMapper, Teacher> impl
             List<TeacherExcel> data = rows.stream().map(o -> (TeacherExcel) o).collect(Collectors.toList());
             ImportLimits.requireAllowedRowCount(data.size());
             result.setTotal(data.size());
-            Set<String> existing = baseMapper.selectList(null).stream()
-                    .map(Teacher::getTeacherNo).collect(Collectors.toSet());
+            List<String> teacherNos = data.stream().map(TeacherExcel::getTeacherNo)
+                    .filter(no -> no != null && !no.isBlank()).distinct().toList();
+            Set<String> existing = teacherNos.isEmpty() ? new java.util.HashSet<>() :
+                    baseMapper.selectList(new LambdaQueryWrapper<Teacher>()
+                                    .select(Teacher::getTeacherNo).in(Teacher::getTeacherNo, teacherNos))
+                            .stream().map(Teacher::getTeacherNo).collect(Collectors.toSet());
+            Set<String> importedNos = new java.util.HashSet<>();
             List<Teacher> entities = new ArrayList<>();
             for (TeacherExcel e : data) {
                 StringBuilder err = new StringBuilder();
@@ -78,7 +84,7 @@ public class TeacherServiceImpl extends ServiceImpl<TeacherMapper, Teacher> impl
                     result.getFailRows().add(e);
                     continue;
                 }
-                if (existing.contains(e.getTeacherNo())) {
+                if (!importedNos.add(e.getTeacherNo()) || existing.contains(e.getTeacherNo())) {
                     e.setErrorMessage("教师编号已存在(" + e.getTeacherNo() + ")");
                     result.getFailRows().add(e);
                     continue;
