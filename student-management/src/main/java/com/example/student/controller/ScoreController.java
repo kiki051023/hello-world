@@ -7,6 +7,8 @@ import com.example.student.common.PageResult;
 import com.example.student.common.PageQuery;
 import com.example.student.common.Result;
 import com.example.student.entity.Score;
+import com.example.student.dto.ScoreDTO;
+import com.example.student.dto.ApiDtoMapper;
 import com.example.student.entity.ImportTask;
 import com.example.student.excel.ScoreExcel;
 import com.example.student.exception.BusinessException;
@@ -42,35 +44,36 @@ public class ScoreController {
     @Operation(summary = "成绩列表（分页）")
     @PreAuthorize("hasAnyRole('ADMIN','EDUCATION_ADMIN','DEPARTMENT_LEADER','COUNSELOR','TEACHER','PRACTICE_TEACHER','STUDENT')")
     @GetMapping("/page")
-    public Result<PageResult<Score>> getScorePage(
+    public Result<PageResult<ScoreDTO>> getScorePage(
             @Valid @ModelAttribute PageQuery pageQuery,
             @RequestParam(required = false) Long studentId,
             @RequestParam(required = false) Long courseId,
             @RequestParam(required = false) Long clazzId) {
         IPage<Score> page = scoreService.getScorePage(pageQuery.getCurrent(), pageQuery.getSize(), studentId, courseId, clazzId);
-        return Result.success(PageResult.of(page.getTotal(), page.getRecords(), page.getCurrent(), page.getSize()));
+        return Result.success(PageResult.of(page.getTotal(), page.getRecords().stream().map(ApiDtoMapper::score).toList(), page.getCurrent(), page.getSize()));
     }
 
     @Operation(summary = "成绩详情")
     @PreAuthorize("hasAnyRole('ADMIN','EDUCATION_ADMIN','DEPARTMENT_LEADER','COUNSELOR','TEACHER','PRACTICE_TEACHER','STUDENT')")
     @GetMapping("/{id}")
-    public Result<Score> getScoreById(@PathVariable Long id) {
-        return Result.success(scoreService.getScoreById(id));
+    public Result<ScoreDTO> getScoreById(@PathVariable Long id) {
+        Score score = scoreService.getScoreById(id);
+        return Result.success(score == null ? null : ApiDtoMapper.score(score));
     }
 
     @Operation(summary = "新增成绩")
     @PreAuthorize("hasAnyRole('ADMIN','EDUCATION_ADMIN','DEPARTMENT_LEADER','COUNSELOR','TEACHER','PRACTICE_TEACHER')")
     @PostMapping
-    public Result<Void> addScore(@RequestBody Score score) {
-        scoreService.addScore(score);
+    public Result<Void> addScore(@RequestBody ScoreDTO score) {
+        scoreService.addScore(ApiDtoMapper.score(score));
         return Result.success();
     }
 
     @Operation(summary = "修改成绩")
     @PreAuthorize("hasAnyRole('ADMIN','EDUCATION_ADMIN','DEPARTMENT_LEADER','COUNSELOR','TEACHER','PRACTICE_TEACHER')")
     @PutMapping
-    public Result<Void> updateScore(@RequestBody Score score) {
-        scoreService.updateScore(score);
+    public Result<Void> updateScore(@RequestBody ScoreDTO score) {
+        scoreService.updateScore(ApiDtoMapper.score(score));
         return Result.success();
     }
 

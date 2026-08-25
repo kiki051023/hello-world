@@ -7,6 +7,8 @@ import com.example.student.common.PageResult;
 import com.example.student.common.PageQuery;
 import com.example.student.common.Result;
 import com.example.student.entity.Student;
+import com.example.student.dto.StudentDTO;
+import com.example.student.dto.ApiDtoMapper;
 import com.example.student.entity.ImportTask;
 import com.example.student.excel.StudentExcel;
 import com.example.student.exception.BusinessException;
@@ -41,35 +43,36 @@ public class StudentController {
     @Operation(summary = "学生列表（分页）")
     @PreAuthorize("hasAnyRole('ADMIN','EDUCATION_ADMIN','DEPARTMENT_LEADER','COUNSELOR','TEACHER','PRACTICE_TEACHER','STUDENT')")
     @GetMapping("/page")
-    public Result<PageResult<Student>> getStudentPage(
+    public Result<PageResult<StudentDTO>> getStudentPage(
             @Valid @ModelAttribute PageQuery pageQuery,
             @RequestParam(required = false) String name,
             @RequestParam(required = false) String studentNo,
             @RequestParam(required = false) Long clazzId) {
         IPage<Student> page = studentService.getStudentPage(pageQuery.getCurrent(), pageQuery.getSize(), name, studentNo, clazzId);
-        return Result.success(PageResult.of(page.getTotal(), page.getRecords(), page.getCurrent(), page.getSize()));
+        return Result.success(PageResult.of(page.getTotal(), page.getRecords().stream().map(ApiDtoMapper::student).toList(), page.getCurrent(), page.getSize()));
     }
 
     @Operation(summary = "学生详情")
     @PreAuthorize("hasAnyRole('ADMIN','EDUCATION_ADMIN','DEPARTMENT_LEADER','COUNSELOR','TEACHER','PRACTICE_TEACHER','STUDENT')")
     @GetMapping("/{id}")
-    public Result<Student> getStudentById(@PathVariable Long id) {
-        return Result.success(studentService.getStudentById(id));
+    public Result<StudentDTO> getStudentById(@PathVariable Long id) {
+        Student student = studentService.getStudentById(id);
+        return Result.success(student == null ? null : ApiDtoMapper.student(student));
     }
 
     @Operation(summary = "新增学生")
     @PreAuthorize("hasAnyRole('ADMIN','EDUCATION_ADMIN','DEPARTMENT_LEADER','COUNSELOR','TEACHER','PRACTICE_TEACHER')")
     @PostMapping
-    public Result<Void> addStudent(@RequestBody Student student) {
-        studentService.addStudent(student);
+    public Result<Void> addStudent(@RequestBody StudentDTO student) {
+        studentService.addStudent(ApiDtoMapper.student(student));
         return Result.success();
     }
 
     @Operation(summary = "修改学生")
     @PreAuthorize("hasAnyRole('ADMIN','EDUCATION_ADMIN','DEPARTMENT_LEADER','COUNSELOR','TEACHER','PRACTICE_TEACHER')")
     @PutMapping
-    public Result<Void> updateStudent(@RequestBody Student student) {
-        studentService.updateStudent(student);
+    public Result<Void> updateStudent(@RequestBody StudentDTO student) {
+        studentService.updateStudent(ApiDtoMapper.student(student));
         return Result.success();
     }
 

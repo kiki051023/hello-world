@@ -7,6 +7,8 @@ import com.example.student.common.PageResult;
 import com.example.student.common.PageQuery;
 import com.example.student.common.Result;
 import com.example.student.entity.Course;
+import com.example.student.dto.CourseDTO;
+import com.example.student.dto.ApiDtoMapper;
 import com.example.student.entity.ImportTask;
 import com.example.student.excel.CourseExcel;
 import com.example.student.exception.BusinessException;
@@ -41,41 +43,42 @@ public class CourseController {
     @Operation(summary = "课程列表（分页）")
     @PreAuthorize("hasAnyRole('ADMIN','EDUCATION_ADMIN','DEPARTMENT_LEADER','COUNSELOR','TEACHER','PRACTICE_TEACHER','STUDENT')")
     @GetMapping("/page")
-    public Result<PageResult<Course>> getCoursePage(
+    public Result<PageResult<CourseDTO>> getCoursePage(
             @Valid @ModelAttribute PageQuery pageQuery,
             @RequestParam(required = false) String courseName,
             @RequestParam(required = false) Long teacherId) {
         IPage<Course> page = courseService.getCoursePage(pageQuery.getCurrent(), pageQuery.getSize(), courseName, teacherId);
-        return Result.success(PageResult.of(page.getTotal(), page.getRecords(), page.getCurrent(), page.getSize()));
+        return Result.success(PageResult.of(page.getTotal(), page.getRecords().stream().map(ApiDtoMapper::course).toList(), page.getCurrent(), page.getSize()));
     }
 
     @Operation(summary = "所有课程列表")
     @PreAuthorize("hasAnyRole('ADMIN','EDUCATION_ADMIN','DEPARTMENT_LEADER','COUNSELOR','TEACHER','PRACTICE_TEACHER','STUDENT')")
     @GetMapping("/list")
-    public Result<List<Course>> getAllCourse() {
-        return Result.success(courseService.getAllCourse());
+    public Result<List<CourseDTO>> getAllCourse() {
+        return Result.success(courseService.getAllCourse().stream().map(ApiDtoMapper::course).toList());
     }
 
     @Operation(summary = "课程详情")
     @PreAuthorize("hasAnyRole('ADMIN','EDUCATION_ADMIN','DEPARTMENT_LEADER','COUNSELOR','TEACHER','PRACTICE_TEACHER','STUDENT')")
     @GetMapping("/{id}")
-    public Result<Course> getCourseById(@PathVariable Long id) {
-        return Result.success(courseService.getCourseById(id));
+    public Result<CourseDTO> getCourseById(@PathVariable Long id) {
+        Course course = courseService.getCourseById(id);
+        return Result.success(course == null ? null : ApiDtoMapper.course(course));
     }
 
     @Operation(summary = "新增课程")
     @PreAuthorize("hasAnyRole('ADMIN','EDUCATION_ADMIN','DEPARTMENT_LEADER','COUNSELOR','TEACHER','PRACTICE_TEACHER')")
     @PostMapping
-    public Result<Void> addCourse(@RequestBody Course course) {
-        courseService.addCourse(course);
+    public Result<Void> addCourse(@RequestBody CourseDTO course) {
+        courseService.addCourse(ApiDtoMapper.course(course));
         return Result.success();
     }
 
     @Operation(summary = "修改课程")
     @PreAuthorize("hasAnyRole('ADMIN','EDUCATION_ADMIN','DEPARTMENT_LEADER','COUNSELOR','TEACHER','PRACTICE_TEACHER')")
     @PutMapping
-    public Result<Void> updateCourse(@RequestBody Course course) {
-        courseService.updateCourse(course);
+    public Result<Void> updateCourse(@RequestBody CourseDTO course) {
+        courseService.updateCourse(ApiDtoMapper.course(course));
         return Result.success();
     }
 

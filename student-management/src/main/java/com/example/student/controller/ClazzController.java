@@ -7,6 +7,8 @@ import com.example.student.common.PageResult;
 import com.example.student.common.PageQuery;
 import com.example.student.common.Result;
 import com.example.student.entity.Clazz;
+import com.example.student.dto.ClazzDTO;
+import com.example.student.dto.ApiDtoMapper;
 import com.example.student.entity.ImportTask;
 import com.example.student.excel.ClazzExcel;
 import com.example.student.exception.BusinessException;
@@ -41,41 +43,42 @@ public class ClazzController {
     @Operation(summary = "班级列表（分页）")
     @PreAuthorize("hasAnyRole('ADMIN','EDUCATION_ADMIN','DEPARTMENT_LEADER','COUNSELOR','TEACHER','PRACTICE_TEACHER','STUDENT')")
     @GetMapping("/page")
-    public Result<PageResult<Clazz>> getClazzPage(
+    public Result<PageResult<ClazzDTO>> getClazzPage(
             @Valid @ModelAttribute PageQuery pageQuery,
             @RequestParam(required = false) String clazzName,
             @RequestParam(required = false) String grade) {
         IPage<Clazz> page = clazzService.getClazzPage(pageQuery.getCurrent(), pageQuery.getSize(), clazzName, grade);
-        return Result.success(PageResult.of(page.getTotal(), page.getRecords(), page.getCurrent(), page.getSize()));
+        return Result.success(PageResult.of(page.getTotal(), page.getRecords().stream().map(ApiDtoMapper::clazz).toList(), page.getCurrent(), page.getSize()));
     }
 
     @Operation(summary = "所有班级列表")
     @PreAuthorize("hasAnyRole('ADMIN','EDUCATION_ADMIN','DEPARTMENT_LEADER','COUNSELOR','TEACHER','PRACTICE_TEACHER','STUDENT')")
     @GetMapping("/list")
-    public Result<List<Clazz>> getAllClazz() {
-        return Result.success(clazzService.getAllClazz());
+    public Result<List<ClazzDTO>> getAllClazz() {
+        return Result.success(clazzService.getAllClazz().stream().map(ApiDtoMapper::clazz).toList());
     }
 
     @Operation(summary = "班级详情")
     @PreAuthorize("hasAnyRole('ADMIN','EDUCATION_ADMIN','DEPARTMENT_LEADER','COUNSELOR','TEACHER','PRACTICE_TEACHER','STUDENT')")
     @GetMapping("/{id}")
-    public Result<Clazz> getClazzById(@PathVariable Long id) {
-        return Result.success(clazzService.getClazzById(id));
+    public Result<ClazzDTO> getClazzById(@PathVariable Long id) {
+        Clazz clazz = clazzService.getClazzById(id);
+        return Result.success(clazz == null ? null : ApiDtoMapper.clazz(clazz));
     }
 
     @Operation(summary = "新增班级")
     @PreAuthorize("hasAnyRole('ADMIN','EDUCATION_ADMIN','DEPARTMENT_LEADER','COUNSELOR','TEACHER','PRACTICE_TEACHER')")
     @PostMapping
-    public Result<Void> addClazz(@RequestBody Clazz clazz) {
-        clazzService.addClazz(clazz);
+    public Result<Void> addClazz(@RequestBody ClazzDTO clazz) {
+        clazzService.addClazz(ApiDtoMapper.clazz(clazz));
         return Result.success();
     }
 
     @Operation(summary = "修改班级")
     @PreAuthorize("hasAnyRole('ADMIN','EDUCATION_ADMIN','DEPARTMENT_LEADER','COUNSELOR','TEACHER','PRACTICE_TEACHER')")
     @PutMapping
-    public Result<Void> updateClazz(@RequestBody Clazz clazz) {
-        clazzService.updateClazz(clazz);
+    public Result<Void> updateClazz(@RequestBody ClazzDTO clazz) {
+        clazzService.updateClazz(ApiDtoMapper.clazz(clazz));
         return Result.success();
     }
 

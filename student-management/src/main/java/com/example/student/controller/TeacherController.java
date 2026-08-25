@@ -4,6 +4,8 @@ import com.alibaba.excel.EasyExcel;
 import com.example.student.common.ImportResult;
 import com.example.student.common.Result;
 import com.example.student.entity.Teacher;
+import com.example.student.dto.TeacherDTO;
+import com.example.student.dto.ApiDtoMapper;
 import com.example.student.entity.ImportTask;
 import com.example.student.excel.TeacherExcel;
 import com.example.student.exception.BusinessException;
@@ -37,30 +39,31 @@ public class TeacherController {
     @Operation(summary = "所有教师列表")
     @PreAuthorize("hasAnyRole('ADMIN','EDUCATION_ADMIN','DEPARTMENT_LEADER','COUNSELOR','TEACHER','PRACTICE_TEACHER')")
     @GetMapping("/list")
-    public Result<List<Teacher>> getAllTeacher() {
-        return Result.success(teacherService.getAllTeacher());
+    public Result<List<TeacherDTO>> getAllTeacher() {
+        return Result.success(teacherService.getAllTeacher().stream().map(ApiDtoMapper::teacher).toList());
     }
 
     @Operation(summary = "教师详情")
     @PreAuthorize("hasAnyRole('ADMIN','EDUCATION_ADMIN','DEPARTMENT_LEADER','COUNSELOR','TEACHER','PRACTICE_TEACHER')")
     @GetMapping("/{id}")
-    public Result<Teacher> getTeacherById(@PathVariable Long id) {
-        return Result.success(teacherService.getTeacherById(id));
+    public Result<TeacherDTO> getTeacherById(@PathVariable Long id) {
+        Teacher teacher = teacherService.getTeacherById(id);
+        return Result.success(teacher == null ? null : ApiDtoMapper.teacher(teacher));
     }
 
     @Operation(summary = "新增教师")
     @PreAuthorize("hasAnyRole('ADMIN','EDUCATION_ADMIN','DEPARTMENT_LEADER','COUNSELOR','TEACHER','PRACTICE_TEACHER')")
     @PostMapping
-    public Result<Void> addTeacher(@RequestBody Teacher teacher) {
-        teacherService.addTeacher(teacher);
+    public Result<Void> addTeacher(@RequestBody TeacherDTO teacher) {
+        teacherService.addTeacher(ApiDtoMapper.teacher(teacher));
         return Result.success();
     }
 
     @Operation(summary = "修改教师")
     @PreAuthorize("hasAnyRole('ADMIN','EDUCATION_ADMIN','DEPARTMENT_LEADER','COUNSELOR','TEACHER','PRACTICE_TEACHER')")
     @PutMapping
-    public Result<Void> updateTeacher(@RequestBody Teacher teacher) {
-        teacherService.updateTeacher(teacher);
+    public Result<Void> updateTeacher(@RequestBody TeacherDTO teacher) {
+        teacherService.updateTeacher(ApiDtoMapper.teacher(teacher));
         return Result.success();
     }
 

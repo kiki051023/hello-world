@@ -30,11 +30,11 @@
 - Create: `student-management/src/test/java/com/example/student/config/ApplicationContextTest.java`
 - Modify: `student-management/pom.xml`（如需补充测试或迁移依赖）
 
-- [ ] 修正 `mybatis-plus` 根级 YAML 缩进，并为生产环境移除固定 JWT 密钥默认值。
-- [ ] 增加 Spring 上下文和 Mapper XML 加载测试。
-- [ ] 配置 Maven Wrapper，确保 CI 和本地不依赖全局 Maven。
-- [ ] 运行 `./mvnw test`，确认上下文、Mapper 和分页插件加载成功。
-- [ ] 提交：`fix: restore backend configuration baseline`。
+- [x] 修正 `mybatis-plus` 根级 YAML 缩进，并为生产环境移除固定 JWT 密钥默认值。
+- [x] 增加 Spring 上下文和 Mapper XML 加载测试。
+- [x] 配置 Maven Wrapper，确保 CI 和本地不依赖全局 Maven。
+- [x] 运行 Wrapper 测试，确认上下文、Mapper 和分页插件加载成功。
+- [x] 提交：`fix: restore backend configuration baseline`。
 
 ### Task 2: 建立数据库迁移与组织架构
 
@@ -44,12 +44,12 @@
 - Modify: `student-management/src/main/resources/sql/init.sql`
 - Create: `student-management/src/test/java/com/example/student/migration/SchemaMigrationTest.java`
 
-- [ ] 新增 `school`、`department`、`major`、`academic_year`。
-- [ ] 扩展 `clazz`、`student`、`teacher`，保留旧字段和逻辑删除。
-- [ ] 为无法自动归属的历史记录建立待完善标记。
-- [ ] 为高频过滤字段建立索引，验证唯一键和外键。
-- [ ] 测试新库初始化和旧数据迁移后的行数、唯一性和关联完整性。
-- [ ] 提交：`feat: add organization migration`。
+- [x] 新增 `school`、`department`、`major`、`academic_year`。
+- [x] 扩展 `clazz`、`student`、`teacher`，保留旧字段和逻辑删除。
+- [x] 为无法自动归属的历史记录建立待完善标记。
+- [x] 为高频过滤字段建立索引，验证唯一键和外键。
+- [x] 测试新库初始化和旧数据迁移后的行数、唯一性和关联完整性。
+- [x] 提交：`feat: add organization migration`。
 
 ### Task 3: 重构角色权限和数据范围
 
@@ -62,12 +62,12 @@
 - Modify: `student-management/src/main/java/com/example/student/config/SecurityConfig.java`
 - Create: `student-management/src/test/java/com/example/student/security/DataScopeServiceTest.java`
 
-- [ ] 将用户角色迁移到关联表，同时兼容旧 `sys_user.role`。
-- [ ] 实现管理员、教务、系部负责人、辅导员、教师、实习指导教师、学生、校领导的数据范围。
-- [ ] 将当前用户关联到学生、教师和组织。
-- [ ] 在 Service 层生成不可被请求参数覆盖的 `DataScope`。
-- [ ] 测试跨班级、跨系部和学生访问他人数据均被拒绝。
-- [ ] 提交：`feat: enforce backend data scopes`。
+- [x] 将用户角色迁移到关联表，同时兼容旧 `sys_user.role`。
+- [x] 实现管理员、教务、系部负责人、辅导员、教师、实习指导教师、学生、校领导的数据范围。
+- [x] 将当前用户关联到学生、教师和组织。
+- [x] 在 Service 层生成不可被请求参数覆盖的 `DataScope`。
+- [x] 测试跨班级、跨系部和学生访问他人数据均被拒绝。
+- [x] 提交：`feat: enforce backend data scopes`。
 
 ### Task 4: 统一 DTO、异常、审计和分页
 
@@ -79,11 +79,11 @@
 - Modify: existing controllers and services incrementally
 - Create: corresponding unit and integration tests
 
-- [ ] 限制页码、页大小、排序字段和导出数量。
-- [ ] 将唯一键、校验、权限和数据库异常转换为统一业务错误。
-- [ ] 记录登录、创建、修改、删除、导入、导出和权限拒绝。
-- [ ] DTO 只暴露必要字段，敏感字段禁止出现在通用实体响应中。
-- [ ] 提交：`refactor: standardize API and audit boundaries`。
+- [x] 限制页码、页大小、排序字段和导出数量。
+- [x] 将唯一键、校验、权限和数据库异常转换为统一业务错误。
+- [x] 记录登录、创建、修改、删除、导入、导出和权限拒绝。
+- [x] DTO 只暴露必要字段，敏感字段禁止出现在通用实体响应中。
+- [x] 提交：`refactor: standardize API and audit boundaries`。
 
 ### Task 5: 修复现有成绩和导入查询问题
 
@@ -95,12 +95,12 @@
 - Modify: all existing import service implementations
 - Create: import service tests
 
-- [ ] 用 JOIN/投影查询替换导出中的全表学生、课程加载。
-- [ ] 导入前批量加载已有编号和成绩组合，检测文件内重复。
-- [ ] 对成绩、学生、课程等唯一键冲突返回逐行错误明细。
-- [ ] 明确“全部回滚”和“合法行继续”的导入模式，默认使用可追踪的部分成功事务策略。
-- [ ] 为成绩列表、详情、统计和雷达接口加入 Service 数据范围。
-- [ ] 提交：`fix: make imports and score queries production-safe`。
+- [x] 用 JOIN/投影查询替换导出中的全表学生、课程加载。
+- [x] 导入前批量加载已有编号和成绩组合，检测文件内重复。
+- [x] 对成绩、学生、课程等唯一键冲突返回逐行错误明细。
+- [x] 明确“全部回滚”和“合法行继续”的导入模式，默认使用可追踪的部分成功事务策略。
+- [x] 为成绩列表、详情、统计和雷达接口加入 Service 数据范围。
+- [x] 提交：`fix: make imports and score queries production-safe`。
 
 ## 阶段二：教务与成绩
 
