@@ -137,18 +137,18 @@
 - Modify: student DTOs and controllers
 - Create: student profile and history views
 
-- [ ] 实现学籍状态、转专业、转班、休学、复学和毕业状态。
-- [ ] 变更写入历史表并审计。
-- [ ] 辅导员只能管理负责班级。
+- [x] 实现学籍状态、转专业、转班、休学、复学和毕业状态。
+- [x] 变更写入历史表并审计。
+- [x] 辅导员只能管理负责班级。
 
 ### Task 9: 请假、奖惩、资助和预警
 
 **Files:**
 - Create: transaction tables, workflow services/controllers, Vue views and tests
 
-- [ ] 实现申请、审批、驳回、销假和超时状态。
-- [ ] 敏感数据单独表存储并限制字段返回。
-- [ ] 预警由可配置规则生成，并保留处理记录。
+- [x] 实现申请、审批、驳回、销假和超时状态。
+- [x] 敏感数据单独表存储并限制字段返回。
+- [x] 预警由可配置规则生成，并保留处理记录。
 
 ## 阶段四：实习就业
 
