@@ -134,17 +134,18 @@ CREATE TABLE IF NOT EXISTS import_task (
 CREATE TABLE IF NOT EXISTS import_error_row (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     task_id BIGINT NOT NULL,
-    row_number INT NOT NULL,
+    row_no INT NOT NULL,
     error_message VARCHAR(500) NOT NULL,
     row_content JSON,
-    UNIQUE KEY uk_import_error_row (task_id, row_number),
+    UNIQUE KEY uk_import_error_row (task_id, row_no),
     KEY idx_import_error_task (task_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='导入错误行';
 
 -- 兼容旧库：通过信息_schema 判断列是否存在，避免重复 ALTER 失败。
 DROP PROCEDURE IF EXISTS phase1_add_column;
 DELIMITER $$
-CREATE PROCEDURE phase1_add_column(IN p_table VARCHAR(64), IN p_column VARCHAR(64), IN p_definition VARCHAR(255))
+CREATE PROCEDURE phase1_add_column(IN p_table VARCHAR(64), IN p_column VARCHAR(64),
+                                   IN p_definition VARCHAR(255) CHARACTER SET utf8mb4)
 BEGIN
     IF NOT EXISTS (
         SELECT 1 FROM information_schema.columns
