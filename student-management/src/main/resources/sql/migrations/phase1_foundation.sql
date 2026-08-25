@@ -113,6 +113,34 @@ CREATE TABLE IF NOT EXISTS sys_data_scope (
     KEY idx_data_scope_value (scope_type, scope_value)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='数据权限范围';
 
+CREATE TABLE IF NOT EXISTS import_task (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    task_no VARCHAR(64) NOT NULL,
+    business_type VARCHAR(50) NOT NULL,
+    file_name VARCHAR(255) NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'RUNNING',
+    total_count INT NOT NULL DEFAULT 0,
+    success_count INT NOT NULL DEFAULT 0,
+    failure_count INT NOT NULL DEFAULT 0,
+    error_message VARCHAR(500),
+    operator_id BIGINT,
+    started_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    finished_at DATETIME,
+    UNIQUE KEY uk_import_task_no (task_no),
+    KEY idx_import_task_operator (operator_id),
+    KEY idx_import_task_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='数据导入任务';
+
+CREATE TABLE IF NOT EXISTS import_error_row (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    task_id BIGINT NOT NULL,
+    row_number INT NOT NULL,
+    error_message VARCHAR(500) NOT NULL,
+    row_content JSON,
+    UNIQUE KEY uk_import_error_row (task_id, row_number),
+    KEY idx_import_error_task (task_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='导入错误行';
+
 -- 兼容旧库：通过信息_schema 判断列是否存在，避免重复 ALTER 失败。
 DROP PROCEDURE IF EXISTS phase1_add_column;
 DELIMITER $$
