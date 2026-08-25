@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.student.mapper.RoleMapper">
+    <select id="selectPermissionsByUserId" resultType="com.example.student.entity.Permission">
+        SELECT DISTINCT p.id, p.permission_code AS permissionCode,
+               p.permission_name AS permissionName, p.resource_type AS resourceType,
+               p.resource_path AS resourcePath, p.status
+        FROM sys_permission p
+        JOIN sys_role_permission rp ON rp.permission_id = p.id
+        JOIN sys_user_role ur ON ur.role_id = rp.role_id
+        JOIN sys_role r ON r.id = ur.role_id
+        WHERE ur.user_id = #{userId} AND p.status = 1 AND r.status = 1 AND r.deleted = 0
+    </select>
+
+    <select id="selectDataScopesByUserId" resultType="com.example.student.entity.DataScope">
+        SELECT scope_type AS scopeType, scope_value AS scopeValue
+        FROM sys_data_scope
+        WHERE user_id = #{userId}
+        UNION
+        SELECT ds.scope_type AS scopeType, ds.scope_value AS scopeValue
+        FROM sys_data_scope ds
+        JOIN sys_user_role ur ON ur.role_id = ds.role_id
+        WHERE ur.user_id = #{userId}
+    </select>
+</mapper>
