@@ -43,6 +43,18 @@ const routes = [
         meta: { title: '成绩管理', icon: 'DataAnalysis', roles: ['ADMIN', 'TEACHER', 'STUDENT'] }
       },
       {
+        path: 'education',
+        name: 'Education',
+        component: () => import('@/views/Education.vue'),
+        meta: { title: '教务管理', icon: 'Calendar', roles: ['ADMIN', 'EDUCATION_ADMIN', 'DEPARTMENT_LEADER', 'COUNSELOR', 'TEACHER', 'STUDENT'] }
+      },
+      {
+        path: 'score-audit',
+        name: 'ScoreAudit',
+        component: () => import('@/views/ScoreAudit.vue'),
+        meta: { title: '成绩审核', icon: 'Checked', roles: ['ADMIN', 'EDUCATION_ADMIN', 'DEPARTMENT_LEADER', 'TEACHER'] }
+      },
+      {
         path: 'analysis',
         name: 'Analysis',
         component: () => import('@/views/Analysis.vue'),
