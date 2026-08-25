@@ -23,6 +23,8 @@ public class Course implements Serializable {
 
     private Long teacherId;
 
+    private Long schoolId;
+
     @TableLogic
     private Integer deleted;
 

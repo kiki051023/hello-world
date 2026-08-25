@@ -40,7 +40,7 @@ public class ScoreController {
     private ImportTaskService importTaskService;
 
     @Operation(summary = "成绩列表（分页）")
-    @PreAuthorize("hasAnyRole('ADMIN','TEACHER','STUDENT')")
+    @PreAuthorize("hasAnyRole('ADMIN','EDUCATION_ADMIN','DEPARTMENT_LEADER','COUNSELOR','TEACHER','PRACTICE_TEACHER','STUDENT')")
     @GetMapping("/page")
     public Result<PageResult<Score>> getScorePage(
             @Valid @ModelAttribute PageQuery pageQuery,
@@ -52,14 +52,14 @@ public class ScoreController {
     }
 
     @Operation(summary = "成绩详情")
-    @PreAuthorize("hasAnyRole('ADMIN','TEACHER','STUDENT')")
+    @PreAuthorize("hasAnyRole('ADMIN','EDUCATION_ADMIN','DEPARTMENT_LEADER','COUNSELOR','TEACHER','PRACTICE_TEACHER','STUDENT')")
     @GetMapping("/{id}")
     public Result<Score> getScoreById(@PathVariable Long id) {
         return Result.success(scoreService.getScoreById(id));
     }
 
     @Operation(summary = "新增成绩")
-    @PreAuthorize("hasAnyRole('ADMIN','TEACHER')")
+    @PreAuthorize("hasAnyRole('ADMIN','EDUCATION_ADMIN','DEPARTMENT_LEADER','COUNSELOR','TEACHER','PRACTICE_TEACHER')")
     @PostMapping
     public Result<Void> addScore(@RequestBody Score score) {
         scoreService.addScore(score);
@@ -67,7 +67,7 @@ public class ScoreController {
     }
 
     @Operation(summary = "修改成绩")
-    @PreAuthorize("hasAnyRole('ADMIN','TEACHER')")
+    @PreAuthorize("hasAnyRole('ADMIN','EDUCATION_ADMIN','DEPARTMENT_LEADER','COUNSELOR','TEACHER','PRACTICE_TEACHER')")
     @PutMapping
     public Result<Void> updateScore(@RequestBody Score score) {
         scoreService.updateScore(score);
@@ -75,7 +75,7 @@ public class ScoreController {
     }
 
     @Operation(summary = "删除成绩")
-    @PreAuthorize("hasAnyRole('ADMIN','TEACHER')")
+    @PreAuthorize("hasAnyRole('ADMIN','EDUCATION_ADMIN','DEPARTMENT_LEADER','COUNSELOR','TEACHER','PRACTICE_TEACHER')")
     @DeleteMapping("/{id}")
     public Result<Void> deleteScore(@PathVariable Long id) {
         scoreService.deleteScore(id);
@@ -83,7 +83,7 @@ public class ScoreController {
     }
 
     @Operation(summary = "成绩统计")
-    @PreAuthorize("hasAnyRole('ADMIN','TEACHER','STUDENT')")
+    @PreAuthorize("hasAnyRole('ADMIN','EDUCATION_ADMIN','DEPARTMENT_LEADER','COUNSELOR','TEACHER','PRACTICE_TEACHER','STUDENT')")
     @GetMapping("/stats")
     public Result<Map<String, BigDecimal>> getScoreStats(
             @RequestParam(required = false) Long courseId,
@@ -92,7 +92,7 @@ public class ScoreController {
     }
 
     @Operation(summary = "导出成绩(Excel)")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','EDUCATION_ADMIN','DEPARTMENT_LEADER','COUNSELOR','TEACHER','PRACTICE_TEACHER')")
     @GetMapping("/export")
     public void exportScores(HttpServletResponse response,
                              @RequestParam(required = false) Long studentId,
@@ -107,7 +107,7 @@ public class ScoreController {
     }
 
     @Operation(summary = "导入成绩(Excel)")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','EDUCATION_ADMIN','DEPARTMENT_LEADER','COUNSELOR','TEACHER','PRACTICE_TEACHER')")
     @PostMapping("/import")
     public Result<ImportResult<ScoreExcel>> importScores(@RequestParam("file") MultipartFile file) {
         if (file == null || file.isEmpty()) {
@@ -125,7 +125,7 @@ public class ScoreController {
     }
 
     @Operation(summary = "导出导入失败明细(Excel)")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','EDUCATION_ADMIN','DEPARTMENT_LEADER','COUNSELOR','TEACHER','PRACTICE_TEACHER')")
     @PostMapping("/import-fail-export")
     public void exportImportFail(@RequestBody List<ScoreExcel> failRows, HttpServletResponse response) throws IOException {
         response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");

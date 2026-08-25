@@ -12,5 +12,6 @@ import java.util.List;
 @Mapper
 public interface RoleMapper extends BaseMapper<Role> {
     List<Permission> selectPermissionsByUserId(@Param("userId") Long userId);
+    List<String> selectRoleCodesByUserId(@Param("userId") Long userId);
     List<DataScope> selectDataScopesByUserId(@Param("userId") Long userId);
 }

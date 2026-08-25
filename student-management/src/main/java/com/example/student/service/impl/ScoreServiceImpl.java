@@ -16,6 +16,8 @@ import com.example.student.mapper.CourseMapper;
 import com.example.student.mapper.ScoreMapper;
 import com.example.student.mapper.StudentMapper;
 import com.example.student.security.StudentDataScopeService;
+import com.example.student.security.DataScopeFilter;
+import com.example.student.security.DataScopeService;
 import com.example.student.service.ScoreService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -43,42 +45,57 @@ public class ScoreServiceImpl extends ServiceImpl<ScoreMapper, Score> implements
     @Autowired
     private StudentDataScopeService studentDataScopeService;
 
+    @Autowired
+    private DataScopeService dataScopeService;
+
     @Override
     public IPage<Score> getScorePage(Long current, Long size, Long studentId, Long courseId, Long clazzId) {
         Page<Score> page = new Page<>(current, size);
         Long scopedStudentId = studentDataScopeService.resolveStudentId(studentId);
-        return baseMapper.selectScorePage(page, scopedStudentId, courseId, clazzId);
+        return dataScopeService == null
+                ? baseMapper.selectScorePage(page, scopedStudentId, courseId, clazzId)
+                : baseMapper.selectScorePage(page, scopedStudentId, courseId, clazzId, currentScope());
     }
 
     @Override
     public void addScore(Score score) {
+        if (!dataScopeService.canAccessCourse(courseMapper.selectById(score.getCourseId())))
+            throw new org.springframework.security.access.AccessDeniedException("无权新增该课程成绩");
         baseMapper.insert(score);
     }
 
     @Override
     public void updateScore(Score score) {
+        Score existing = baseMapper.selectById(score.getId());
+        Course course = existing == null ? null : courseMapper.selectById(existing.getCourseId());
+        if (existing == null || course == null || !dataScopeService.canAccessCourse(course))
+            throw new org.springframework.security.access.AccessDeniedException("无权修改该成绩");
         baseMapper.updateById(score);
     }
 
     @Override
     public void deleteScore(Long id) {
+        Score existing = baseMapper.selectById(id);
+        Course course = existing == null ? null : courseMapper.selectById(existing.getCourseId());
+        if (existing == null || course == null || !dataScopeService.canAccessCourse(course))
+            throw new org.springframework.security.access.AccessDeniedException("无权删除该成绩");
         baseMapper.deleteById(id);
     }
 
     @Override
     public Score getScoreById(Long id) {
-        Long scopedStudentId = studentDataScopeService.resolveStudentId(null);
         LambdaQueryWrapper<Score> wrapper = new LambdaQueryWrapper<Score>().eq(Score::getId, id);
-        if (scopedStudentId != null) {
-            wrapper.eq(Score::getStudentId, scopedStudentId);
-        }
-        return baseMapper.selectOne(wrapper);
+        Score score = baseMapper.selectOne(wrapper);
+        Student student = score == null ? null : studentMapper.selectById(score.getStudentId());
+        if (score != null && !dataScopeService.canAccessScore(student, courseMapper.selectById(score.getCourseId())))
+            throw new org.springframework.security.access.AccessDeniedException("无权查看该成绩");
+        return score;
     }
 
     @Override
     public Map<String, BigDecimal> getScoreStats(Long courseId, Long clazzId) {
         Long scopedStudentId = studentDataScopeService.resolveStudentId(null);
-        Map<String, BigDecimal> stats = baseMapper.selectScoreStats(scopedStudentId, courseId, clazzId);
+        Map<String, BigDecimal> stats = baseMapper.selectScoreStats(scopedStudentId, courseId, clazzId, dataScopeService.currentFilter());
         if (stats == null) {
             stats = new HashMap<>();
             stats.put("avg", BigDecimal.ZERO);
@@ -91,7 +108,9 @@ public class ScoreServiceImpl extends ServiceImpl<ScoreMapper, Score> implements
 
     @Override
     public List<ScoreExcel> exportScores(Long studentId, Long courseId, Long clazzId) {
-        List<Map<String, Object>> rows = baseMapper.selectScoreExport(studentId, courseId, clazzId);
+        List<Map<String, Object>> rows = dataScopeService == null
+                ? baseMapper.selectScoreExport(studentId, courseId, clazzId)
+                : baseMapper.selectScoreExport(studentId, courseId, clazzId, currentScope());
         List<ScoreExcel> result = new ArrayList<>();
         for (Map<String, Object> row : rows) {
             ScoreExcel e = new ScoreExcel();
@@ -124,11 +143,11 @@ public class ScoreServiceImpl extends ServiceImpl<ScoreMapper, Score> implements
             List<String> courseNames = data.stream().map(ScoreExcel::getCourseName)
                     .filter(name -> name != null && !name.isBlank()).distinct().toList();
             Map<String, Long> studentNoMap = studentNos.isEmpty() ? new HashMap<>() :
-                    studentMapper.selectIdsByStudentNos(studentNos).stream()
+                    studentMapper.selectIdsByStudentNos(studentNos, dataScopeService.currentFilter()).stream()
                             .collect(Collectors.toMap(row -> (String) row.get("studentNo"),
                                     row -> ((Number) row.get("id")).longValue(), (a, b) -> a));
             Map<String, Long> courseNameMap = courseNames.isEmpty() ? new HashMap<>() :
-                    courseMapper.selectIdsByCourseNames(courseNames).stream()
+                    courseMapper.selectIdsByCourseNames(courseNames, currentScope()).stream()
                             .collect(Collectors.toMap(row -> (String) row.get("courseName"),
                                     row -> ((Number) row.get("id")).longValue(), (a, b) -> a));
             List<Long> studentIds = new ArrayList<>(studentNoMap.values());
@@ -184,5 +203,9 @@ public class ScoreServiceImpl extends ServiceImpl<ScoreMapper, Score> implements
             throw new BusinessException("Excel 解析失败: " + ex.getMessage());
         }
         return result;
+    }
+
+    private DataScopeFilter currentScope() {
+        return dataScopeService == null ? null : dataScopeService.currentFilter();
     }
 }

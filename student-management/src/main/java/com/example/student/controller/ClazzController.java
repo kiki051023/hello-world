@@ -39,7 +39,7 @@ public class ClazzController {
     private ImportTaskService importTaskService;
 
     @Operation(summary = "班级列表（分页）")
-    @PreAuthorize("hasAnyRole('ADMIN','TEACHER','STUDENT')")
+    @PreAuthorize("hasAnyRole('ADMIN','EDUCATION_ADMIN','DEPARTMENT_LEADER','COUNSELOR','TEACHER','PRACTICE_TEACHER','STUDENT')")
     @GetMapping("/page")
     public Result<PageResult<Clazz>> getClazzPage(
             @Valid @ModelAttribute PageQuery pageQuery,
@@ -50,21 +50,21 @@ public class ClazzController {
     }
 
     @Operation(summary = "所有班级列表")
-    @PreAuthorize("hasAnyRole('ADMIN','TEACHER','STUDENT')")
+    @PreAuthorize("hasAnyRole('ADMIN','EDUCATION_ADMIN','DEPARTMENT_LEADER','COUNSELOR','TEACHER','PRACTICE_TEACHER','STUDENT')")
     @GetMapping("/list")
     public Result<List<Clazz>> getAllClazz() {
         return Result.success(clazzService.getAllClazz());
     }
 
     @Operation(summary = "班级详情")
-    @PreAuthorize("hasAnyRole('ADMIN','TEACHER','STUDENT')")
+    @PreAuthorize("hasAnyRole('ADMIN','EDUCATION_ADMIN','DEPARTMENT_LEADER','COUNSELOR','TEACHER','PRACTICE_TEACHER','STUDENT')")
     @GetMapping("/{id}")
     public Result<Clazz> getClazzById(@PathVariable Long id) {
-        return Result.success(clazzService.getById(id));
+        return Result.success(clazzService.getClazzById(id));
     }
 
     @Operation(summary = "新增班级")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','EDUCATION_ADMIN','DEPARTMENT_LEADER','COUNSELOR','TEACHER','PRACTICE_TEACHER')")
     @PostMapping
     public Result<Void> addClazz(@RequestBody Clazz clazz) {
         clazzService.addClazz(clazz);
@@ -72,7 +72,7 @@ public class ClazzController {
     }
 
     @Operation(summary = "修改班级")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','EDUCATION_ADMIN','DEPARTMENT_LEADER','COUNSELOR','TEACHER','PRACTICE_TEACHER')")
     @PutMapping
     public Result<Void> updateClazz(@RequestBody Clazz clazz) {
         clazzService.updateClazz(clazz);
@@ -80,7 +80,7 @@ public class ClazzController {
     }
 
     @Operation(summary = "删除班级")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','EDUCATION_ADMIN','DEPARTMENT_LEADER','COUNSELOR','TEACHER','PRACTICE_TEACHER')")
     @DeleteMapping("/{id}")
     public Result<Void> deleteClazz(@PathVariable Long id) {
         clazzService.deleteClazz(id);
@@ -88,7 +88,7 @@ public class ClazzController {
     }
 
     @Operation(summary = "导出班级(Excel)")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','EDUCATION_ADMIN','DEPARTMENT_LEADER','COUNSELOR','TEACHER','PRACTICE_TEACHER')")
     @GetMapping("/export")
     public void exportClazzs(HttpServletResponse response,
                              @RequestParam(required = false) String clazzName,
@@ -102,7 +102,7 @@ public class ClazzController {
     }
 
     @Operation(summary = "导入班级(Excel)")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','EDUCATION_ADMIN','DEPARTMENT_LEADER','COUNSELOR','TEACHER','PRACTICE_TEACHER')")
     @PostMapping("/import")
     public Result<ImportResult<ClazzExcel>> importClazzs(@RequestParam("file") MultipartFile file) {
         if (file == null || file.isEmpty()) {

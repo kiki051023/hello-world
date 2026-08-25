@@ -13,6 +13,8 @@ import com.example.student.exception.BusinessException;
 import com.example.student.excel.ClazzExcel;
 import com.example.student.mapper.ClazzMapper;
 import com.example.student.mapper.TeacherMapper;
+import com.example.student.security.DataScopeFilter;
+import com.example.student.security.DataScopeService;
 import com.example.student.service.ClazzService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -32,30 +34,47 @@ public class ClazzServiceImpl extends ServiceImpl<ClazzMapper, Clazz> implements
     @Autowired
     private TeacherMapper teacherMapper;
 
+    @Autowired
+    private DataScopeService dataScopeService;
+
     @Override
     public IPage<Clazz> getClazzPage(Long current, Long size, String clazzName, String grade) {
         Page<Clazz> page = new Page<>(current, size);
-        return baseMapper.selectClazzPage(page, clazzName, grade);
+        return baseMapper.selectClazzPage(page, clazzName, grade, dataScopeService.currentFilter());
     }
 
     @Override
     public void addClazz(Clazz clazz) {
+        DataScopeFilter scope = dataScopeService.currentFilter();
+        if (!scope.isUnrestricted() && scope.getDepartmentId() == null) throw new org.springframework.security.access.AccessDeniedException("无权新增班级");
+        if (!scope.isUnrestricted() && clazz.getDepartmentId() == null) clazz.setDepartmentId(scope.getDepartmentId());
         baseMapper.insert(clazz);
     }
 
     @Override
     public void updateClazz(Clazz clazz) {
+        Clazz existing = baseMapper.selectById(clazz.getId());
+        if (existing == null || !dataScopeService.canAccessClazz(existing)) throw new org.springframework.security.access.AccessDeniedException("无权修改该班级");
         baseMapper.updateById(clazz);
     }
 
     @Override
     public void deleteClazz(Long id) {
+        Clazz existing = baseMapper.selectById(id);
+        if (existing == null || !dataScopeService.canAccessClazz(existing)) throw new org.springframework.security.access.AccessDeniedException("无权删除该班级");
         baseMapper.deleteById(id);
     }
 
     @Override
     public List<Clazz> getAllClazz() {
-        return baseMapper.selectList(null);
+        return baseMapper.selectList(null).stream().filter(dataScopeService::canAccessClazz).toList();
+    }
+
+    @Override
+    public Clazz getClazzById(Long id) {
+        Clazz clazz = baseMapper.selectById(id);
+        if (clazz != null && !dataScopeService.canAccessClazz(clazz)) throw new org.springframework.security.access.AccessDeniedException("无权查看该班级");
+        return clazz;
     }
 
     @Override
@@ -63,7 +82,7 @@ public class ClazzServiceImpl extends ServiceImpl<ClazzMapper, Clazz> implements
         LambdaQueryWrapper<Clazz> wrapper = new LambdaQueryWrapper<>();
         if (clazzName != null && !clazzName.isEmpty()) wrapper.like(Clazz::getClazzName, clazzName);
         if (grade != null && !grade.isEmpty()) wrapper.eq(Clazz::getGrade, grade);
-        List<Clazz> list = baseMapper.selectList(wrapper);
+        List<Clazz> list = baseMapper.selectList(wrapper).stream().filter(dataScopeService::canAccessClazz).toList();
         Map<Long, String> teacherMap = teacherMapper.selectList(null).stream()
                 .collect(Collectors.toMap(Teacher::getId, Teacher::getName, (a, b) -> a));
         List<ClazzExcel> result = new ArrayList<>();
@@ -82,6 +101,9 @@ public class ClazzServiceImpl extends ServiceImpl<ClazzMapper, Clazz> implements
     public ImportResult<ClazzExcel> importClazzs(MultipartFile file) {
         ImportResult<ClazzExcel> result = new ImportResult<>();
         try {
+            DataScopeFilter scope = dataScopeService.currentFilter();
+            if (!scope.isUnrestricted() && (scope.isSelfOnly() || scope.getDepartmentId() == null))
+                throw new org.springframework.security.access.AccessDeniedException("当前角色没有班级导入范围");
             List<?> rows = EasyExcel.read(file.getInputStream()).head(ClazzExcel.class).sheet().doReadSync();
             List<ClazzExcel> data = rows.stream().map(o -> (ClazzExcel) o).collect(Collectors.toList());
             ImportLimits.requireAllowedRowCount(data.size());
@@ -114,6 +136,7 @@ public class ClazzServiceImpl extends ServiceImpl<ClazzMapper, Clazz> implements
                 Clazz c = new Clazz();
                 c.setClazzName(e.getClazzName());
                 c.setGrade(e.getGrade());
+                if (!scope.isUnrestricted()) c.setDepartmentId(scope.getDepartmentId());
                 if (e.getHeadTeacherName() != null && !e.getHeadTeacherName().isEmpty()) {
                     Long tid = teacherNameMap.get(e.getHeadTeacherName());
                     if (tid == null) {

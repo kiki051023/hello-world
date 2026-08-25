@@ -39,7 +39,7 @@ public class CourseController {
     private ImportTaskService importTaskService;
 
     @Operation(summary = "课程列表（分页）")
-    @PreAuthorize("hasAnyRole('ADMIN','TEACHER','STUDENT')")
+    @PreAuthorize("hasAnyRole('ADMIN','EDUCATION_ADMIN','DEPARTMENT_LEADER','COUNSELOR','TEACHER','PRACTICE_TEACHER','STUDENT')")
     @GetMapping("/page")
     public Result<PageResult<Course>> getCoursePage(
             @Valid @ModelAttribute PageQuery pageQuery,
@@ -50,21 +50,21 @@ public class CourseController {
     }
 
     @Operation(summary = "所有课程列表")
-    @PreAuthorize("hasAnyRole('ADMIN','TEACHER','STUDENT')")
+    @PreAuthorize("hasAnyRole('ADMIN','EDUCATION_ADMIN','DEPARTMENT_LEADER','COUNSELOR','TEACHER','PRACTICE_TEACHER','STUDENT')")
     @GetMapping("/list")
     public Result<List<Course>> getAllCourse() {
         return Result.success(courseService.getAllCourse());
     }
 
     @Operation(summary = "课程详情")
-    @PreAuthorize("hasAnyRole('ADMIN','TEACHER','STUDENT')")
+    @PreAuthorize("hasAnyRole('ADMIN','EDUCATION_ADMIN','DEPARTMENT_LEADER','COUNSELOR','TEACHER','PRACTICE_TEACHER','STUDENT')")
     @GetMapping("/{id}")
     public Result<Course> getCourseById(@PathVariable Long id) {
-        return Result.success(courseService.getById(id));
+        return Result.success(courseService.getCourseById(id));
     }
 
     @Operation(summary = "新增课程")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','EDUCATION_ADMIN','DEPARTMENT_LEADER','COUNSELOR','TEACHER','PRACTICE_TEACHER')")
     @PostMapping
     public Result<Void> addCourse(@RequestBody Course course) {
         courseService.addCourse(course);
@@ -72,7 +72,7 @@ public class CourseController {
     }
 
     @Operation(summary = "修改课程")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','EDUCATION_ADMIN','DEPARTMENT_LEADER','COUNSELOR','TEACHER','PRACTICE_TEACHER')")
     @PutMapping
     public Result<Void> updateCourse(@RequestBody Course course) {
         courseService.updateCourse(course);
@@ -80,7 +80,7 @@ public class CourseController {
     }
 
     @Operation(summary = "删除课程")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','EDUCATION_ADMIN','DEPARTMENT_LEADER','COUNSELOR','TEACHER','PRACTICE_TEACHER')")
     @DeleteMapping("/{id}")
     public Result<Void> deleteCourse(@PathVariable Long id) {
         courseService.deleteCourse(id);
@@ -88,7 +88,7 @@ public class CourseController {
     }
 
     @Operation(summary = "导出课程(Excel)")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','EDUCATION_ADMIN','DEPARTMENT_LEADER','COUNSELOR','TEACHER','PRACTICE_TEACHER')")
     @GetMapping("/export")
     public void exportCourses(HttpServletResponse response,
                               @RequestParam(required = false) String courseName,
@@ -102,7 +102,7 @@ public class CourseController {
     }
 
     @Operation(summary = "导入课程(Excel)")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','EDUCATION_ADMIN','DEPARTMENT_LEADER','COUNSELOR','TEACHER','PRACTICE_TEACHER')")
     @PostMapping("/import")
     public Result<ImportResult<CourseExcel>> importCourses(@RequestParam("file") MultipartFile file) {
         if (file == null || file.isEmpty()) {

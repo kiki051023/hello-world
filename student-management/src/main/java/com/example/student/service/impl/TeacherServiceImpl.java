@@ -9,6 +9,8 @@ import com.example.student.entity.Teacher;
 import com.example.student.exception.BusinessException;
 import com.example.student.excel.TeacherExcel;
 import com.example.student.mapper.TeacherMapper;
+import com.example.student.security.DataScopeService;
+import org.springframework.beans.factory.annotation.Autowired;
 import com.example.student.service.TeacherService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,29 +25,46 @@ import java.util.stream.Collectors;
 @Service
 public class TeacherServiceImpl extends ServiceImpl<TeacherMapper, Teacher> implements TeacherService {
 
+    @Autowired
+    private DataScopeService dataScopeService;
+
     @Override
     public List<Teacher> getAllTeacher() {
-        return baseMapper.selectList(null);
+        return baseMapper.selectList(null).stream().filter(dataScopeService::canAccessTeacher).toList();
+    }
+
+    @Override
+    public Teacher getTeacherById(Long id) {
+        Teacher teacher = baseMapper.selectById(id);
+        if (teacher != null && !dataScopeService.canAccessTeacher(teacher)) throw new org.springframework.security.access.AccessDeniedException("无权查看该教师");
+        return teacher;
     }
 
     @Override
     public void addTeacher(Teacher teacher) {
+        var scope = dataScopeService.currentFilter();
+        if (!scope.isUnrestricted() && scope.getDepartmentId() == null) throw new org.springframework.security.access.AccessDeniedException("无权新增教师");
+        if (!scope.isUnrestricted() && teacher.getDepartmentId() == null) teacher.setDepartmentId(scope.getDepartmentId());
         baseMapper.insert(teacher);
     }
 
     @Override
     public void updateTeacher(Teacher teacher) {
+        Teacher existing = baseMapper.selectById(teacher.getId());
+        if (existing == null || !dataScopeService.canAccessTeacher(existing)) throw new org.springframework.security.access.AccessDeniedException("无权修改该教师");
         baseMapper.updateById(teacher);
     }
 
     @Override
     public void deleteTeacher(Long id) {
+        Teacher existing = baseMapper.selectById(id);
+        if (existing == null || !dataScopeService.canAccessTeacher(existing)) throw new org.springframework.security.access.AccessDeniedException("无权删除该教师");
         baseMapper.deleteById(id);
     }
 
     @Override
     public List<TeacherExcel> exportTeachers() {
-        List<Teacher> list = baseMapper.selectList(null);
+        List<Teacher> list = getAllTeacher();
         List<TeacherExcel> result = new ArrayList<>();
         for (Teacher t : list) {
             TeacherExcel e = new TeacherExcel();
@@ -63,6 +82,8 @@ public class TeacherServiceImpl extends ServiceImpl<TeacherMapper, Teacher> impl
     public ImportResult<TeacherExcel> importTeachers(MultipartFile file) {
         ImportResult<TeacherExcel> result = new ImportResult<>();
         try {
+            if (!dataScopeService.currentFilter().isUnrestricted())
+                throw new org.springframework.security.access.AccessDeniedException("当前角色没有教师导入范围");
             List<?> rows = EasyExcel.read(file.getInputStream()).head(TeacherExcel.class).sheet().doReadSync();
             List<TeacherExcel> data = rows.stream().map(o -> (TeacherExcel) o).collect(Collectors.toList());
             ImportLimits.requireAllowedRowCount(data.size());

@@ -11,6 +11,7 @@ import java.util.List;
 public interface TeacherService extends IService<Teacher> {
 
     List<Teacher> getAllTeacher();
+    Teacher getTeacherById(Long id);
 
     void addTeacher(Teacher teacher);
 

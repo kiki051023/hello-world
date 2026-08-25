@@ -25,6 +25,12 @@ public class Teacher implements Serializable {
 
     private Long userId;
 
+    private Long schoolId;
+
+    private Long departmentId;
+
+    private String teacherType;
+
     @TableLogic
     private Integer deleted;
 

@@ -20,6 +20,7 @@ public interface CourseService extends IService<Course> {
     void deleteCourse(Long id);
 
     List<Course> getAllCourse();
+    Course getCourseById(Long id);
 
     List<CourseExcel> exportCourses(String courseName, Long teacherId);
 

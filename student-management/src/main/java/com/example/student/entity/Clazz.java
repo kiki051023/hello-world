@@ -21,6 +21,12 @@ public class Clazz implements Serializable {
 
     private Long headTeacherId;
 
+    private Long schoolId;
+
+    private Long departmentId;
+
+    private Long majorId;
+
     @TableLogic
     private Integer deleted;
 

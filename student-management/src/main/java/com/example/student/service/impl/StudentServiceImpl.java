@@ -13,6 +13,8 @@ import com.example.student.exception.BusinessException;
 import com.example.student.excel.StudentExcel;
 import com.example.student.mapper.ClazzMapper;
 import com.example.student.mapper.StudentMapper;
+import com.example.student.security.DataScopeFilter;
+import com.example.student.security.DataScopeService;
 import com.example.student.service.StudentService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -32,14 +34,19 @@ public class StudentServiceImpl extends ServiceImpl<StudentMapper, Student> impl
     @Autowired
     private ClazzMapper clazzMapper;
 
+    @Autowired
+    private DataScopeService dataScopeService;
+
     @Override
     public IPage<Student> getStudentPage(Long current, Long size, String name, String studentNo, Long clazzId) {
         Page<Student> page = new Page<>(current, size);
-        return baseMapper.selectStudentPage(page, name, studentNo, clazzId);
+        return baseMapper.selectStudentPage(page, name, studentNo, clazzId, dataScopeService.currentFilter());
     }
 
     @Override
     public void addStudent(Student student) {
+        DataScopeFilter scope = dataScopeService.currentFilter();
+        if (!scope.isUnrestricted() && scope.isSelfOnly()) throw new org.springframework.security.access.AccessDeniedException("学生账号不能新增学生");
         LambdaQueryWrapper<Student> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Student::getStudentNo, student.getStudentNo());
         if (baseMapper.selectCount(wrapper) > 0) {
@@ -53,22 +60,28 @@ public class StudentServiceImpl extends ServiceImpl<StudentMapper, Student> impl
         if (student.getId() == null) {
             throw new BusinessException("学生ID不能为空");
         }
+        Student existing = baseMapper.selectById(student.getId());
+        if (existing == null || !dataScopeService.canAccessStudent(existing)) throw new org.springframework.security.access.AccessDeniedException("无权修改该学生");
         baseMapper.updateById(student);
     }
 
     @Override
     public void deleteStudent(Long id) {
+        Student existing = baseMapper.selectById(id);
+        if (existing == null || !dataScopeService.canAccessStudent(existing)) throw new org.springframework.security.access.AccessDeniedException("无权删除该学生");
         baseMapper.deleteById(id);
     }
 
     @Override
     public Student getStudentById(Long id) {
-        return baseMapper.selectById(id);
+        Student student = baseMapper.selectById(id);
+        if (student != null && !dataScopeService.canAccessStudent(student)) throw new org.springframework.security.access.AccessDeniedException("无权查看该学生");
+        return student;
     }
 
     @Override
     public List<StudentExcel> exportStudents(String name, String studentNo, Long clazzId) {
-        List<Map<String, Object>> rows = baseMapper.selectStudentExport(name, studentNo, clazzId);
+        List<Map<String, Object>> rows = baseMapper.selectStudentExport(name, studentNo, clazzId, dataScopeService.currentFilter());
         List<StudentExcel> result = new ArrayList<>();
         for (Map<String, Object> row : rows) {
             StudentExcel e = new StudentExcel();
@@ -91,6 +104,8 @@ public class StudentServiceImpl extends ServiceImpl<StudentMapper, Student> impl
     public ImportResult<StudentExcel> importStudents(MultipartFile file) {
         ImportResult<StudentExcel> result = new ImportResult<>();
         try {
+            DataScopeFilter scope = dataScopeService.currentFilter();
+            if (!scope.isUnrestricted() && scope.isSelfOnly()) throw new org.springframework.security.access.AccessDeniedException("学生账号不能导入学生");
             List<?> rows = EasyExcel.read(file.getInputStream()).head(StudentExcel.class).sheet().doReadSync();
             List<StudentExcel> data = rows.stream().map(o -> (StudentExcel) o).collect(Collectors.toList());
             ImportLimits.requireAllowedRowCount(data.size());
@@ -98,10 +113,10 @@ public class StudentServiceImpl extends ServiceImpl<StudentMapper, Student> impl
             List<String> studentNos = data.stream().map(StudentExcel::getStudentNo)
                     .filter(no -> no != null && !no.isBlank()).distinct().toList();
             Set<String> existingNos = studentNos.isEmpty() ? new java.util.HashSet<>() :
-                    baseMapper.selectIdsByStudentNos(studentNos).stream()
+                    baseMapper.selectIdsByStudentNos(studentNos, dataScopeService.currentFilter()).stream()
                             .map(row -> (String) row.get("studentNo")).collect(Collectors.toSet());
             Set<String> importedNos = new java.util.HashSet<>();
-            Map<String, Long> clazzNameMap = clazzMapper.selectList(null).stream()
+            Map<String, Long> clazzNameMap = clazzMapper.selectList(null).stream().filter(dataScopeService::canAccessClazz)
                     .collect(Collectors.toMap(Clazz::getClazzName, Clazz::getId, (a, b) -> a));
             List<Student> entities = new ArrayList<>();
             for (StudentExcel e : data) {
@@ -134,6 +149,7 @@ public class StudentServiceImpl extends ServiceImpl<StudentMapper, Student> impl
                     s.setClazzId(cid);
                 }
                 s.setAddress(e.getAddress());
+                if (!scope.isUnrestricted()) s.setDepartmentId(scope.getDepartmentId());
                 entities.add(s);
             }
             if (!entities.isEmpty()) {

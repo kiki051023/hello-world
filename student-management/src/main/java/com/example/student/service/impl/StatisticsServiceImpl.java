@@ -7,6 +7,8 @@ import com.example.student.mapper.ScoreMapper;
 import com.example.student.mapper.StudentMapper;
 import com.example.student.mapper.TeacherMapper;
 import com.example.student.security.StudentDataScopeService;
+import com.example.student.security.DataScopeFilter;
+import com.example.student.security.DataScopeService;
 import com.example.student.service.StatisticsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -39,15 +41,19 @@ public class StatisticsServiceImpl implements StatisticsService {
     @Autowired
     private StudentDataScopeService studentDataScopeService;
 
+    @Autowired
+    private DataScopeService dataScopeService;
+
     @Override
     public Map<String, Object> getOverview() {
         Map<String, Object> map = new HashMap<>();
-        map.put("studentCount", studentMapper.selectCount(new LambdaQueryWrapper<>()));
-        map.put("clazzCount", clazzMapper.selectCount(new LambdaQueryWrapper<>()));
-        map.put("courseCount", courseMapper.selectCount(new LambdaQueryWrapper<>()));
-        map.put("teacherCount", teacherMapper.selectCount(new LambdaQueryWrapper<>()));
-        map.put("scoreCount", scoreMapper.selectCount(new LambdaQueryWrapper<>()));
-        Map<String, BigDecimal> stats = scoreMapper.selectScoreStats(null, null, null);
+        DataScopeFilter scope = currentScope();
+        map.put("studentCount", studentMapper.selectList(null).stream().filter(dataScopeService::canAccessStudent).count());
+        map.put("clazzCount", clazzMapper.selectList(null).stream().filter(dataScopeService::canAccessClazz).count());
+        map.put("courseCount", courseMapper.selectList(null).stream().filter(dataScopeService::canAccessCourse).count());
+        map.put("teacherCount", teacherMapper.selectList(null).stream().filter(dataScopeService::canAccessTeacher).count());
+        map.put("scoreCount", scoreMapper.selectScopedCount(scope));
+        Map<String, BigDecimal> stats = scoreMapper.selectScoreStats(null, null, null, scope);
         map.put("avgScore", stats.get("avg"));
         map.put("passRate", stats.get("passRate"));
         map.put("maxScore", stats.get("max"));
@@ -60,7 +66,8 @@ public class StatisticsServiceImpl implements StatisticsService {
         Map<String, Object> map = new HashMap<>();
 
         // 成绩分段分布（保证 5 段有序，缺失段补 0）
-        List<Map<String, Object>> dist = scoreMapper.selectScoreDistribution();
+        DataScopeFilter scope = currentScope();
+        List<Map<String, Object>> dist = scoreMapper.selectScoreDistribution(scope);
         String[] labels = { "0-59", "60-69", "70-79", "80-89", "90-100" };
         int[] counts = new int[5];
         for (Map<String, Object> row : dist) {
@@ -73,12 +80,12 @@ public class StatisticsServiceImpl implements StatisticsService {
         map.put("distributionLabels", Arrays.asList(labels));
         map.put("distributionData", Arrays.stream(counts).boxed().collect(Collectors.toList()));
 
-        map.put("avgByClazz", scoreMapper.selectAvgByClazz());
-        map.put("passRateByCourse", scoreMapper.selectPassRateByCourse());
-        map.put("avgByCourse", scoreMapper.selectAvgByCourse());
-        map.put("topStudents", scoreMapper.selectTopStudents(10));
-        map.put("trend", scoreMapper.selectScoreTrend());
-        Map<String, Object> pf = scoreMapper.selectPassFail();
+        map.put("avgByClazz", scoreMapper.selectAvgByClazz(scope));
+        map.put("passRateByCourse", scoreMapper.selectPassRateByCourse(scope));
+        map.put("avgByCourse", scoreMapper.selectAvgByCourse(scope));
+        map.put("topStudents", scoreMapper.selectTopStudents(10, scope));
+        map.put("trend", scoreMapper.selectScoreTrend(scope));
+        Map<String, Object> pf = scoreMapper.selectPassFail(scope);
         map.put("passCount", pf.get("passCount") == null ? 0 : pf.get("passCount"));
         map.put("failCount", pf.get("failCount") == null ? 0 : pf.get("failCount"));
         return map;
@@ -103,5 +110,9 @@ public class StatisticsServiceImpl implements StatisticsService {
         map.put("courses", courses);
         map.put("scores", scores);
         return map;
+    }
+
+    private DataScopeFilter currentScope() {
+        return dataScopeService == null ? null : dataScopeService.currentFilter();
     }
 }

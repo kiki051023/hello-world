@@ -23,6 +23,12 @@
         FROM student s
         LEFT JOIN clazz c ON s.clazz_id = c.id
         WHERE s.deleted = 0
+        <if test="scope != null and !scope.unrestricted">
+            AND ( (scope.selfOnly AND s.user_id = scope.userId)
+               OR (scope.departmentId != null AND s.department_id = scope.departmentId)
+               OR (scope.hasClassIds AND s.clazz_id IN <foreach collection="scope.classIds" item="id" open="(" separator="," close=")">#{id}</foreach>)
+               OR (scope.teacherId != null AND EXISTS (SELECT 1 FROM score sc_scope JOIN course co_scope ON co_scope.id = sc_scope.course_id WHERE sc_scope.student_id = s.id AND sc_scope.deleted = 0 AND co_scope.teacher_id = scope.teacherId)) )
+        </if>
         <if test="name != null and name != ''">
             AND s.name LIKE CONCAT('%', #{name}, '%')
         </if>
@@ -42,6 +48,12 @@
         FROM student s
         LEFT JOIN clazz c ON s.clazz_id = c.id
         WHERE s.deleted = 0
+        <if test="scope != null and !scope.unrestricted">
+            AND ( (scope.selfOnly AND s.user_id = scope.userId)
+               OR (scope.departmentId != null AND s.department_id = scope.departmentId)
+               OR (scope.hasClassIds AND s.clazz_id IN <foreach collection="scope.classIds" item="id" open="(" separator="," close=")">#{id}</foreach>)
+               OR (scope.teacherId != null AND EXISTS (SELECT 1 FROM score sc_scope JOIN course co_scope ON co_scope.id = sc_scope.course_id WHERE sc_scope.student_id = s.id AND sc_scope.deleted = 0 AND co_scope.teacher_id = scope.teacherId)) )
+        </if>
         <if test="name != null and name != ''">
             AND s.name LIKE CONCAT('%', #{name}, '%')
         </if>
@@ -58,6 +70,11 @@
         SELECT id AS id, student_no AS studentNo
         FROM student
         WHERE deleted = 0
+        <if test="scope != null and !scope.unrestricted">
+            AND ( (scope.selfOnly AND user_id = scope.userId)
+               OR (scope.departmentId != null AND department_id = scope.departmentId)
+               OR (scope.hasClassIds AND clazz_id IN <foreach collection="scope.classIds" item="id" open="(" separator="," close=")">#{id}</foreach>) )
+        </if>
           AND student_no IN
         <foreach collection="studentNos" item="studentNo" open="(" separator="," close=")">
             #{studentNo}

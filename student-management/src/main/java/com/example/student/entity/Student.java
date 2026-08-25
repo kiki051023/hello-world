@@ -30,6 +30,12 @@ public class Student implements Serializable {
 
     private Long clazzId;
 
+    private Long schoolId;
+
+    private Long departmentId;
+
+    private Long majorId;
+
     private Long userId;
 
     @TableLogic

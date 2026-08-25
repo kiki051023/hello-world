@@ -20,6 +20,7 @@ public interface ClazzService extends IService<Clazz> {
     void deleteClazz(Long id);
 
     List<Clazz> getAllClazz();
+    Clazz getClazzById(Long id);
 
     List<ClazzExcel> exportClazzs(String clazzName, String grade);
 

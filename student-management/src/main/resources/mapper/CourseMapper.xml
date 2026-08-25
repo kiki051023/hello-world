@@ -19,6 +19,11 @@
         FROM course c
         LEFT JOIN teacher t ON c.teacher_id = t.id
         WHERE c.deleted = 0
+        <if test="scope != null and !scope.unrestricted">
+            AND ( (scope.teacherId != null AND c.teacher_id = scope.teacherId)
+               OR (scope.hasCourseIds AND c.id IN <foreach collection="scope.courseIds" item="id" open="(" separator="," close=")">#{id}</foreach>)
+               OR (scope.departmentId != null AND EXISTS (SELECT 1 FROM teacher t_scope WHERE t_scope.id = c.teacher_id AND t_scope.department_id = scope.departmentId)) )
+        </if>
         <if test="courseName != null and courseName != ''">
             AND c.course_name LIKE CONCAT('%', #{courseName}, '%')
         </if>
@@ -34,6 +39,11 @@
         FROM course c
         LEFT JOIN teacher t ON c.teacher_id = t.id
         WHERE c.deleted = 0
+        <if test="scope != null and !scope.unrestricted">
+            AND ( (scope.teacherId != null AND c.teacher_id = scope.teacherId)
+               OR (scope.hasCourseIds AND c.id IN <foreach collection="scope.courseIds" item="id" open="(" separator="," close=")">#{id}</foreach>)
+               OR (scope.departmentId != null AND EXISTS (SELECT 1 FROM teacher t_scope WHERE t_scope.id = c.teacher_id AND t_scope.department_id = scope.departmentId)) )
+        </if>
         <if test="courseName != null and courseName != ''">
             AND c.course_name LIKE CONCAT('%', #{courseName}, '%')
         </if>
@@ -47,6 +57,10 @@
         SELECT id AS id, course_name AS courseName
         FROM course
         WHERE deleted = 0
+        <if test="scope != null and !scope.unrestricted">
+            AND ( (scope.teacherId != null AND teacher_id = scope.teacherId)
+               OR (scope.hasCourseIds AND id IN <foreach collection="scope.courseIds" item="id" open="(" separator="," close=")">#{id}</foreach>) )
+        </if>
           AND course_name IN
         <foreach collection="courseNames" item="courseName" open="(" separator="," close=")">
             #{courseName}

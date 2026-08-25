@@ -35,21 +35,21 @@ public class TeacherController {
     private ImportTaskService importTaskService;
 
     @Operation(summary = "所有教师列表")
-    @PreAuthorize("hasAnyRole('ADMIN','TEACHER')")
+    @PreAuthorize("hasAnyRole('ADMIN','EDUCATION_ADMIN','DEPARTMENT_LEADER','COUNSELOR','TEACHER','PRACTICE_TEACHER')")
     @GetMapping("/list")
     public Result<List<Teacher>> getAllTeacher() {
         return Result.success(teacherService.getAllTeacher());
     }
 
     @Operation(summary = "教师详情")
-    @PreAuthorize("hasAnyRole('ADMIN','TEACHER')")
+    @PreAuthorize("hasAnyRole('ADMIN','EDUCATION_ADMIN','DEPARTMENT_LEADER','COUNSELOR','TEACHER','PRACTICE_TEACHER')")
     @GetMapping("/{id}")
     public Result<Teacher> getTeacherById(@PathVariable Long id) {
-        return Result.success(teacherService.getById(id));
+        return Result.success(teacherService.getTeacherById(id));
     }
 
     @Operation(summary = "新增教师")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','EDUCATION_ADMIN','DEPARTMENT_LEADER','COUNSELOR','TEACHER','PRACTICE_TEACHER')")
     @PostMapping
     public Result<Void> addTeacher(@RequestBody Teacher teacher) {
         teacherService.addTeacher(teacher);
@@ -57,7 +57,7 @@ public class TeacherController {
     }
 
     @Operation(summary = "修改教师")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','EDUCATION_ADMIN','DEPARTMENT_LEADER','COUNSELOR','TEACHER','PRACTICE_TEACHER')")
     @PutMapping
     public Result<Void> updateTeacher(@RequestBody Teacher teacher) {
         teacherService.updateTeacher(teacher);
@@ -65,7 +65,7 @@ public class TeacherController {
     }
 
     @Operation(summary = "删除教师")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','EDUCATION_ADMIN','DEPARTMENT_LEADER','COUNSELOR','TEACHER','PRACTICE_TEACHER')")
     @DeleteMapping("/{id}")
     public Result<Void> deleteTeacher(@PathVariable Long id) {
         teacherService.deleteTeacher(id);
@@ -73,7 +73,7 @@ public class TeacherController {
     }
 
     @Operation(summary = "导出教师(Excel)")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','EDUCATION_ADMIN','DEPARTMENT_LEADER','COUNSELOR','TEACHER','PRACTICE_TEACHER')")
     @GetMapping("/export")
     public void exportTeachers(HttpServletResponse response) throws IOException {
         response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
@@ -85,7 +85,7 @@ public class TeacherController {
     }
 
     @Operation(summary = "导入教师(Excel)")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','EDUCATION_ADMIN','DEPARTMENT_LEADER','COUNSELOR','TEACHER','PRACTICE_TEACHER')")
     @PostMapping("/import")
     public Result<ImportResult<TeacherExcel>> importTeachers(@RequestParam("file") MultipartFile file) {
         if (file == null || file.isEmpty()) {

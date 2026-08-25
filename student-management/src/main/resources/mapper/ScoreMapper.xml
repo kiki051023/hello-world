@@ -3,6 +3,16 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.example.student.mapper.ScoreMapper">
 
+    <sql id="scoreDataScope">
+        <if test="scope != null and !scope.unrestricted">
+            AND ( (scope.selfOnly AND s.user_id = scope.userId)
+               OR (scope.departmentId != null AND s.department_id = scope.departmentId)
+               OR (scope.hasClassIds AND s.clazz_id IN <foreach collection="scope.classIds" item="id" open="(" separator="," close=")">#{id}</foreach>)
+               OR (scope.teacherId != null AND EXISTS (SELECT 1 FROM course co_scope WHERE co_scope.id = sc.course_id AND co_scope.teacher_id = scope.teacherId))
+               OR (scope.hasCourseIds AND sc.course_id IN <foreach collection="scope.courseIds" item="id" open="(" separator="," close=")">#{id}</foreach>) )
+        </if>
+    </sql>
+
     <resultMap id="ScoreResultMap" type="com.example.student.entity.Score">
         <id property="id" column="id"/>
         <result property="studentId" column="student_id"/>
@@ -22,6 +32,13 @@
         LEFT JOIN student s ON sc.student_id = s.id
         LEFT JOIN course c ON sc.course_id = c.id
         WHERE sc.deleted = 0
+        <if test="scope != null and !scope.unrestricted">
+            AND ( (scope.selfOnly AND s.user_id = scope.userId)
+               OR (scope.departmentId != null AND s.department_id = scope.departmentId)
+               OR (scope.hasClassIds AND s.clazz_id IN <foreach collection="scope.classIds" item="id" open="(" separator="," close=")">#{id}</foreach>)
+               OR (scope.teacherId != null AND c.teacher_id = scope.teacherId)
+               OR (scope.hasCourseIds AND sc.course_id IN <foreach collection="scope.courseIds" item="id" open="(" separator="," close=")">#{id}</foreach>) )
+        </if>
         <if test="studentId != null">
             AND sc.student_id = #{studentId}
         </if>
@@ -44,6 +61,13 @@
         JOIN student s ON sc.student_id = s.id
         JOIN course c ON sc.course_id = c.id
         WHERE sc.deleted = 0
+        <if test="scope != null and !scope.unrestricted">
+            AND ( (scope.selfOnly AND s.user_id = scope.userId)
+               OR (scope.departmentId != null AND s.department_id = scope.departmentId)
+               OR (scope.hasClassIds AND s.clazz_id IN <foreach collection="scope.classIds" item="id" open="(" separator="," close=")">#{id}</foreach>)
+               OR (scope.teacherId != null AND c.teacher_id = scope.teacherId)
+               OR (scope.hasCourseIds AND sc.course_id IN <foreach collection="scope.courseIds" item="id" open="(" separator="," close=")">#{id}</foreach>) )
+        </if>
         <if test="studentId != null">
             AND sc.student_id = #{studentId}
         </if>
@@ -78,7 +102,15 @@
             COALESCE(ROUND(SUM(CASE WHEN sc.score &gt;= 60 THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2), 0) AS passRate
         FROM score sc
         LEFT JOIN student s ON sc.student_id = s.id
+        LEFT JOIN course c ON sc.course_id = c.id
         WHERE sc.deleted = 0
+        <if test="scope != null and !scope.unrestricted">
+            AND ( (scope.selfOnly AND s.user_id = scope.userId)
+               OR (scope.departmentId != null AND s.department_id = scope.departmentId)
+               OR (scope.hasClassIds AND s.clazz_id IN <foreach collection="scope.classIds" item="id" open="(" separator="," close=")">#{id}</foreach>)
+               OR (scope.teacherId != null AND c.teacher_id = scope.teacherId)
+               OR (scope.hasCourseIds AND sc.course_id IN <foreach collection="scope.courseIds" item="id" open="(" separator="," close=")">#{id}</foreach>) )
+        </if>
         <if test="studentId != null">
             AND sc.student_id = #{studentId}
         </if>
@@ -88,6 +120,14 @@
         <if test="clazzId != null">
             AND s.clazz_id = #{clazzId}
         </if>
+    </select>
+
+    <select id="selectScopedCount" resultType="long">
+        SELECT COUNT(*) FROM score sc
+        JOIN student s ON sc.student_id = s.id
+        JOIN course c ON sc.course_id = c.id
+        WHERE sc.deleted = 0
+        <include refid="scoreDataScope"/>
     </select>
 
     <!-- 成绩分段分布：0-59 / 60-69 / 70-79 / 80-89 / 90-100 -->
@@ -102,7 +142,10 @@
             END AS bucket,
             COUNT(*) AS cnt
         FROM score sc
+        JOIN student s ON sc.student_id = s.id
+        JOIN course c ON sc.course_id = c.id
         WHERE sc.deleted = 0
+        <include refid="scoreDataScope"/>
         GROUP BY bucket
         ORDER BY bucket
     </select>
@@ -115,6 +158,7 @@
         JOIN student s ON sc.student_id = s.id
         JOIN clazz c ON s.clazz_id = c.id
         WHERE sc.deleted = 0
+        <include refid="scoreDataScope"/>
         GROUP BY c.id, c.clazz_name
         ORDER BY avgScore DESC
     </select>
@@ -126,6 +170,7 @@
         FROM score sc
         JOIN course c ON sc.course_id = c.id
         WHERE sc.deleted = 0
+        <include refid="scoreDataScope"/>
         GROUP BY c.id, c.course_name
         ORDER BY passRate DESC
     </select>
@@ -137,6 +182,7 @@
         FROM score sc
         JOIN course c ON sc.course_id = c.id
         WHERE sc.deleted = 0
+        <include refid="scoreDataScope"/>
         GROUP BY c.id, c.course_name
         ORDER BY avgScore DESC
     </select>
@@ -148,6 +194,7 @@
         FROM score sc
         JOIN student s ON sc.student_id = s.id
         WHERE sc.deleted = 0
+        <include refid="scoreDataScope"/>
         GROUP BY s.id, s.name
         ORDER BY avgScore DESC
         LIMIT #{limit}
@@ -158,7 +205,10 @@
         SELECT DATE_FORMAT(sc.exam_time, '%Y-%m') AS examMonth,
                ROUND(AVG(sc.score), 2) AS avgScore
         FROM score sc
+        JOIN student s ON sc.student_id = s.id
+        JOIN course c ON sc.course_id = c.id
         WHERE sc.deleted = 0
+        <include refid="scoreDataScope"/>
           AND sc.exam_time IS NOT NULL
         GROUP BY examMonth
         ORDER BY examMonth
@@ -170,7 +220,10 @@
             SUM(CASE WHEN sc.score &gt;= 60 THEN 1 ELSE 0 END) AS passCount,
             SUM(CASE WHEN sc.score &lt; 60 THEN 1 ELSE 0 END)  AS failCount
         FROM score sc
+        JOIN student s ON sc.student_id = s.id
+        JOIN course c ON sc.course_id = c.id
         WHERE sc.deleted = 0
+        <include refid="scoreDataScope"/>
     </select>
 
     <!-- 指定学生的各课程成绩（雷达图） -->

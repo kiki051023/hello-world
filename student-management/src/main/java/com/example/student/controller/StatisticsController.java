@@ -22,21 +22,21 @@ public class StatisticsController {
     private StatisticsService statisticsService;
 
     @Operation(summary = "数据概览")
-    @PreAuthorize("hasAnyRole('ADMIN','TEACHER','STUDENT')")
+    @PreAuthorize("hasAnyRole('ADMIN','EDUCATION_ADMIN','DEPARTMENT_LEADER','COUNSELOR','TEACHER','PRACTICE_TEACHER','SCHOOL_LEADER','STUDENT')")
     @GetMapping("/overview")
     public Result<Map<String, Object>> overview() {
         return Result.success(statisticsService.getOverview());
     }
 
     @Operation(summary = "成绩深度分析（分布/班级/课程/Top/趋势/及格率）")
-    @PreAuthorize("hasAnyRole('ADMIN','TEACHER')")
+    @PreAuthorize("hasAnyRole('ADMIN','EDUCATION_ADMIN','DEPARTMENT_LEADER','COUNSELOR','TEACHER','PRACTICE_TEACHER','SCHOOL_LEADER')")
     @GetMapping("/score-analysis")
     public Result<Map<String, Object>> scoreAnalysis() {
         return Result.success(statisticsService.getScoreAnalysis());
     }
 
     @Operation(summary = "单个学生各课程成绩雷达")
-    @PreAuthorize("hasAnyRole('ADMIN','TEACHER','STUDENT')")
+    @PreAuthorize("hasAnyRole('ADMIN','EDUCATION_ADMIN','DEPARTMENT_LEADER','COUNSELOR','TEACHER','PRACTICE_TEACHER','SCHOOL_LEADER','STUDENT')")
     @GetMapping("/student-radar/{studentId}")
     public Result<Map<String, Object>> studentRadar(@PathVariable Long studentId) {
         return Result.success(statisticsService.getStudentRadar(studentId));

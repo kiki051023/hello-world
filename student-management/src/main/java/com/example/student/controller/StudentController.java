@@ -39,7 +39,7 @@ public class StudentController {
     private ImportTaskService importTaskService;
 
     @Operation(summary = "学生列表（分页）")
-    @PreAuthorize("hasAnyRole('ADMIN','TEACHER')")
+    @PreAuthorize("hasAnyRole('ADMIN','EDUCATION_ADMIN','DEPARTMENT_LEADER','COUNSELOR','TEACHER','PRACTICE_TEACHER','STUDENT')")
     @GetMapping("/page")
     public Result<PageResult<Student>> getStudentPage(
             @Valid @ModelAttribute PageQuery pageQuery,
@@ -51,14 +51,14 @@ public class StudentController {
     }
 
     @Operation(summary = "学生详情")
-    @PreAuthorize("hasAnyRole('ADMIN','TEACHER')")
+    @PreAuthorize("hasAnyRole('ADMIN','EDUCATION_ADMIN','DEPARTMENT_LEADER','COUNSELOR','TEACHER','PRACTICE_TEACHER','STUDENT')")
     @GetMapping("/{id}")
     public Result<Student> getStudentById(@PathVariable Long id) {
         return Result.success(studentService.getStudentById(id));
     }
 
     @Operation(summary = "新增学生")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','EDUCATION_ADMIN','DEPARTMENT_LEADER','COUNSELOR','TEACHER','PRACTICE_TEACHER')")
     @PostMapping
     public Result<Void> addStudent(@RequestBody Student student) {
         studentService.addStudent(student);
@@ -66,7 +66,7 @@ public class StudentController {
     }
 
     @Operation(summary = "修改学生")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','EDUCATION_ADMIN','DEPARTMENT_LEADER','COUNSELOR','TEACHER','PRACTICE_TEACHER')")
     @PutMapping
     public Result<Void> updateStudent(@RequestBody Student student) {
         studentService.updateStudent(student);
@@ -74,7 +74,7 @@ public class StudentController {
     }
 
     @Operation(summary = "删除学生")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','EDUCATION_ADMIN','DEPARTMENT_LEADER','COUNSELOR','TEACHER','PRACTICE_TEACHER')")
     @DeleteMapping("/{id}")
     public Result<Void> deleteStudent(@PathVariable Long id) {
         studentService.deleteStudent(id);
@@ -82,7 +82,7 @@ public class StudentController {
     }
 
     @Operation(summary = "导出学生(Excel)")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','EDUCATION_ADMIN','DEPARTMENT_LEADER','COUNSELOR','TEACHER','PRACTICE_TEACHER')")
     @GetMapping("/export")
     public void exportStudents(HttpServletResponse response,
                                @RequestParam(required = false) String name,
@@ -97,7 +97,7 @@ public class StudentController {
     }
 
     @Operation(summary = "导入学生(Excel)")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','EDUCATION_ADMIN','DEPARTMENT_LEADER','COUNSELOR','TEACHER','PRACTICE_TEACHER')")
     @PostMapping("/import")
     public Result<ImportResult<StudentExcel>> importStudents(@RequestParam("file") MultipartFile file) {
         if (file == null || file.isEmpty()) {

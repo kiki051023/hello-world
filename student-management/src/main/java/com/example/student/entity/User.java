@@ -23,6 +23,12 @@ public class User implements Serializable {
 
     private String role;
 
+    private Long schoolId;
+
+    private Long departmentId;
+
+    private String employeeType;
+
     private Integer status;
 
     /** Incremented whenever roles or data scopes change, invalidating stale sessions. */

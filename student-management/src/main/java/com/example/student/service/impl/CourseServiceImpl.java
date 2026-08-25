@@ -13,6 +13,7 @@ import com.example.student.exception.BusinessException;
 import com.example.student.excel.CourseExcel;
 import com.example.student.mapper.CourseMapper;
 import com.example.student.mapper.TeacherMapper;
+import com.example.student.security.DataScopeService;
 import com.example.student.service.CourseService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -32,35 +33,50 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
     @Autowired
     private TeacherMapper teacherMapper;
 
+    @Autowired
+    private DataScopeService dataScopeService;
+
     @Override
     public IPage<Course> getCoursePage(Long current, Long size, String courseName, Long teacherId) {
         Page<Course> page = new Page<>(current, size);
-        return baseMapper.selectCoursePage(page, courseName, teacherId);
+        return baseMapper.selectCoursePage(page, courseName, teacherId, dataScopeService.currentFilter());
     }
 
     @Override
     public void addCourse(Course course) {
+        if (!dataScopeService.canAssignTeacher(course.getTeacherId())) throw new org.springframework.security.access.AccessDeniedException("无权新增该教师负责的课程");
         baseMapper.insert(course);
     }
 
     @Override
     public void updateCourse(Course course) {
+        Course existing = baseMapper.selectById(course.getId());
+        if (existing == null || !dataScopeService.canAccessCourse(existing)) throw new org.springframework.security.access.AccessDeniedException("无权修改该课程");
         baseMapper.updateById(course);
     }
 
     @Override
     public void deleteCourse(Long id) {
+        Course existing = baseMapper.selectById(id);
+        if (existing == null || !dataScopeService.canAccessCourse(existing)) throw new org.springframework.security.access.AccessDeniedException("无权删除该课程");
         baseMapper.deleteById(id);
     }
 
     @Override
     public List<Course> getAllCourse() {
-        return baseMapper.selectList(null);
+        return baseMapper.selectList(null).stream().filter(dataScopeService::canAccessCourse).toList();
+    }
+
+    @Override
+    public Course getCourseById(Long id) {
+        Course course = baseMapper.selectById(id);
+        if (course != null && !dataScopeService.canAccessCourse(course)) throw new org.springframework.security.access.AccessDeniedException("无权查看该课程");
+        return course;
     }
 
     @Override
     public List<CourseExcel> exportCourses(String courseName, Long teacherId) {
-        List<Map<String, Object>> rows = baseMapper.selectCourseExport(courseName, teacherId);
+        List<Map<String, Object>> rows = baseMapper.selectCourseExport(courseName, teacherId, dataScopeService.currentFilter());
         List<CourseExcel> result = new ArrayList<>();
         for (Map<String, Object> row : rows) {
             CourseExcel e = new CourseExcel();
@@ -79,6 +95,9 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
     public ImportResult<CourseExcel> importCourses(MultipartFile file) {
         ImportResult<CourseExcel> result = new ImportResult<>();
         try {
+            var scope = dataScopeService.currentFilter();
+            if (!scope.isUnrestricted() && scope.getTeacherId() == null)
+                throw new org.springframework.security.access.AccessDeniedException("当前角色没有课程导入范围");
             List<?> rows = EasyExcel.read(file.getInputStream()).head(CourseExcel.class).sheet().doReadSync();
             List<CourseExcel> data = rows.stream().map(o -> (CourseExcel) o).collect(Collectors.toList());
             ImportLimits.requireAllowedRowCount(data.size());
@@ -86,7 +105,7 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
             List<String> courseNames = data.stream().map(CourseExcel::getCourseName)
                     .filter(name -> name != null && !name.isBlank()).distinct().toList();
             Set<String> existing = courseNames.isEmpty() ? new java.util.HashSet<>() :
-                    baseMapper.selectIdsByCourseNames(courseNames).stream()
+                    baseMapper.selectIdsByCourseNames(courseNames, dataScopeService.currentFilter()).stream()
                             .map(row -> (String) row.get("courseName")).collect(Collectors.toSet());
             Set<String> importedNames = new java.util.HashSet<>();
             Map<String, Long> teacherNameMap = teacherMapper.selectList(null).stream()
@@ -107,6 +126,7 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
                 c.setCourseNo(e.getCourseNo());
                 c.setCourseName(e.getCourseName());
                 c.setCredit(e.getCredit());
+                if (!scope.isUnrestricted()) c.setTeacherId(scope.getTeacherId());
                 if (e.getTeacherName() != null && !e.getTeacherName().isEmpty()) {
                     Long tid = teacherNameMap.get(e.getTeacherName());
                     if (tid == null) {
