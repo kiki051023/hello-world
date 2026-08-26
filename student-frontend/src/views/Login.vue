@@ -87,9 +87,9 @@ const userStore = useUserStore()
 const formRef = ref(null)
 const loading = ref(false)
 
-// 背景：深色 scrim 渐变 + 图片（import 引用确保 Vite 正确 hash 打包进 dist）
+// 背景：轻量 scrim 渐变 + 图片（透视效果，图片清晰可见；import 引用确保 Vite 正确打包）
 const pageBgStyle = {
-  backgroundImage: `linear-gradient(90deg, rgba(10, 12, 16, 0.94) 0%, rgba(12, 15, 21, 0.84) 45%, rgba(12, 15, 21, 0.62) 100%), url(${loginBg})`
+  backgroundImage: `linear-gradient(90deg, rgba(8, 10, 14, 0.34) 0%, rgba(10, 13, 18, 0.24) 45%, rgba(10, 13, 18, 0.10) 100%), url(${loginBg})`
 }
 
 const loginForm = ref({
@@ -161,8 +161,8 @@ async function handleLogin() {
   justify-content: space-between;
   padding: clamp(2.5rem, 6vw, 5rem);
   border-right: 1px solid rgba(201, 162, 39, 0.14);
-  /* 透明底，让背景图在 scrim 渐变下透出；仅保留最左侧的深色收边保证文字对比 */
-  background: linear-gradient(90deg, rgba(9, 11, 15, 0.55) 0%, transparent 70%);
+  /* 轻透底：只保留极淡的左侧收边保证文字对比，背景图完整透出 */
+  background: linear-gradient(90deg, rgba(8, 10, 14, 0.18) 0%, transparent 60%);
   overflow: hidden;
 }
 
@@ -205,14 +205,18 @@ async function handleLogin() {
   line-height: 1.15;
   color: #f0ead9;
   margin: 0 0 0.6rem;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  /* 背景图透出时保证标题可读 */
+  text-shadow:
+    0 2px 12px rgba(0, 0, 0, 0.55),
+    0 1px 2px rgba(0, 0, 0, 0.6);
 }
 
 .brand-sub {
   font-size: 0.85rem;
   letter-spacing: 0.14em;
-  color: #9a937f;
+  color: #d8d2c2;
   margin: 0 0 1.6rem;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
 }
 
 .brand-rule {
@@ -254,10 +258,10 @@ async function handleLogin() {
   width: 100%;
   max-width: 400px;
   padding: clamp(2rem, 5vw, 2.8rem);
-  /* 半透明玻璃卡：背景图在磨砂下透出暖调，与暗色古典主题融合 */
-  background: linear-gradient(160deg, rgba(28, 33, 44, 0.68), rgba(18, 22, 28, 0.82));
-  backdrop-filter: blur(16px) saturate(1.15);
-  -webkit-backdrop-filter: blur(16px) saturate(1.15);
+  /* 通透玻璃卡：低不透明度 + 磨砂，背景图透出暖调，表单仍可读 */
+  background: linear-gradient(160deg, rgba(28, 33, 44, 0.42), rgba(18, 22, 28, 0.58));
+  backdrop-filter: blur(14px) saturate(1.2);
+  -webkit-backdrop-filter: blur(14px) saturate(1.2);
   border: 1px solid rgba(201, 162, 39, 0.28);
   border-radius: 14px;
   box-shadow:
