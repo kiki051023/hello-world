@@ -1,7 +1,19 @@
 <template>
   <div class="dashboard">
+    <!-- 欢迎横幅（顶部） -->
+    <div class="welcome-banner">
+      <div class="welcome-left">
+        <p class="welcome-greet">欢迎回来，{{ userStore.realName || userStore.username }}</p>
+        <p class="welcome-tip">今天也要元气满满地处理教务工作</p>
+      </div>
+      <div class="welcome-right">
+        <span class="role-badge">{{ roleText }}</span>
+        <span class="welcome-date">{{ todayStr }}</span>
+      </div>
+    </div>
+
     <!-- 数据大屏 KPI -->
-    <el-row :gutter="16">
+    <el-row :gutter="16" style="margin-top: 16px;">
       <el-col
         v-for="k in kpis"
         :key="k.label"
@@ -35,21 +47,7 @@
     </el-row>
 
     <el-row :gutter="16" style="margin-top: 16px;">
-      <el-col :span="12">
-        <el-card shadow="never" class="panel-card">
-          <template #header>
-            <div class="card-title"><span class="title-dash"></span>欢迎使用</div>
-          </template>
-          <div class="welcome">
-            <p class="welcome-greet">欢迎回来，{{ userStore.realName || userStore.username }}</p>
-            <p class="welcome-role">当前角色</p>
-            <span class="role-badge">{{ roleText }}</span>
-            <div class="welcome-divider"></div>
-            <p class="welcome-tip">今天也要元气满满地处理教务工作</p>
-          </div>
-        </el-card>
-      </el-col>
-      <el-col :span="12">
+      <el-col :span="24">
         <el-card shadow="never" class="panel-card">
           <template #header>
             <div class="card-title"><span class="title-dash"></span>快捷入口</div>
@@ -114,6 +112,14 @@ const features = [
   { path: '/course', title: '课程信息管理', icon: Reading, color: '#8a6d47', bg: 'rgba(138,109,71,0.14)' },
   { path: '/analysis', title: '成绩分析大屏', icon: TrendCharts, color: '#9c7d22', bg: 'rgba(156,125,34,0.14)' }
 ]
+
+// 顶部欢迎横幅日期（如：2026年8月27日 星期四）
+const todayStr = new Date().toLocaleDateString('zh-CN', {
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+  weekday: 'long'
+})
 
 const baseGrid = (bottom = 50) => ({ left: 50, right: 20, bottom, top: 50 })
 
@@ -266,56 +272,122 @@ onMounted(async () => {
   background: linear-gradient(180deg, #d4af37, #9c7d22);
 }
 
-/* 欢迎区 */
-.welcome {
-  padding: 8px 0;
+/* ===== 欢迎横幅（顶部）===== */
+.welcome-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 22px 26px;
+  border-radius: 12px;
+  background: linear-gradient(120deg, #141a24 0%, #1b2230 55%, #222b3d 100%);
+  border: 1px solid rgba(201, 162, 39, 0.25);
+  box-shadow: 0 4px 18px rgba(14, 17, 22, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  position: relative;
+  overflow: hidden;
+}
+
+/* 金色氛围光晕 */
+.welcome-banner::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(600px 300px at 12% 0%, rgba(201, 162, 39, 0.1), transparent 60%);
+}
+
+.welcome-left {
+  position: relative;
+  z-index: 1;
 }
 
 .welcome-greet {
   font-family: Georgia, 'Times New Roman', serif;
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 600;
-  color: var(--ink-text);
-  margin: 6px 0 18px;
+  letter-spacing: 0.03em;
+  color: #f0ead9;
+  margin: 0 0 6px;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.4);
+}
+
+.welcome-tip {
+  font-size: 13px;
+  color: #9a937f;
+  margin: 0;
   letter-spacing: 0.02em;
 }
 
-.welcome-role {
-  font-size: 12px;
-  color: var(--ink-muted);
-  margin: 0 0 8px;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+.welcome-right {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-shrink: 0;
 }
 
 .role-badge {
   display: inline-block;
-  padding: 4px 14px;
+  padding: 5px 16px;
   border-radius: 6px;
   font-size: 13px;
   font-weight: 600;
+  letter-spacing: 0.06em;
   color: #14171d;
   background: linear-gradient(180deg, #d4af37, #b8942a);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3);
 }
 
-.welcome-divider {
-  height: 1px;
-  background: linear-gradient(90deg, var(--line-gold), transparent);
-  margin: 20px 0 14px;
-}
-
-.welcome-tip {
+.welcome-date {
   font-size: 13px;
-  color: var(--ink-muted);
-  margin: 0;
-  line-height: 1.7;
+  color: #b7b0a0;
+  letter-spacing: 0.03em;
+  padding-left: 14px;
+  border-left: 1px solid rgba(201, 162, 39, 0.3);
 }
 
-/* 快捷入口 */
+/* ===== 图表卡片 ===== */
+.chart-card {
+  border-radius: 10px;
+  border: 1px solid var(--line-light);
+  background: #fdfcf9;
+  box-shadow: 0 1px 3px rgba(31, 41, 55, 0.04);
+}
+
+/* ===== 面板卡片：快捷入口 ===== */
+.panel-card {
+  border-radius: 10px;
+  border: 1px solid var(--line-light);
+  background: #fdfcf9;
+  box-shadow: 0 1px 3px rgba(31, 41, 55, 0.04);
+}
+
+.panel-card :deep(.el-card__header) {
+  border-bottom: 1px solid var(--line-light);
+  padding: 14px 18px;
+}
+
+.card-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink-text);
+}
+
+.title-dash {
+  width: 3px;
+  height: 14px;
+  border-radius: 2px;
+  background: linear-gradient(180deg, #d4af37, #9c7d22);
+}
+
+/* 快捷入口：整行四列 */
 .features {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(4, 1fr);
   gap: 12px;
   padding: 8px 0;
 }
@@ -365,5 +437,18 @@ onMounted(async () => {
 .feature-item:hover .feature-arrow {
   opacity: 1;
   transform: translateX(3px);
+}
+
+/* 窄屏：欢迎横幅纵向堆叠，快捷入口两列 */
+@media (max-width: 768px) {
+  .welcome-banner {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 18px 20px;
+  }
+
+  .features {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 </style>
