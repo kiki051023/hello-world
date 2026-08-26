@@ -1,5 +1,5 @@
 <template>
-  <div class="login-page">
+  <div class="login-page" :style="pageBgStyle">
     <!-- 左侧：品牌叙事区（古典学院风） -->
     <section class="brand-panel" aria-label="系统介绍">
       <div class="brand-inner">
@@ -80,11 +80,17 @@ import { ElMessage } from 'element-plus'
 import { User, Lock } from '@element-plus/icons-vue'
 import { login } from '@/api/auth'
 import { useUserStore } from '@/store/user'
+import loginBg from '@/assets/login-bg.jpg'
 
 const router = useRouter()
 const userStore = useUserStore()
 const formRef = ref(null)
 const loading = ref(false)
+
+// 背景：深色 scrim 渐变 + 图片（import 引用确保 Vite 正确 hash 打包进 dist）
+const pageBgStyle = {
+  backgroundImage: `linear-gradient(90deg, rgba(10, 12, 16, 0.94) 0%, rgba(12, 15, 21, 0.84) 45%, rgba(12, 15, 21, 0.62) 100%), url(${loginBg})`
+}
 
 const loginForm = ref({
   username: '',
@@ -126,11 +132,24 @@ async function handleLogin() {
 .login-page {
   min-height: 100dvh;
   display: flex;
-  background:
-    radial-gradient(1200px 700px at 12% -10%, rgba(201, 162, 39, 0.08), transparent 60%),
-    radial-gradient(900px 600px at 110% 110%, rgba(201, 162, 39, 0.05), transparent 55%),
-    #0e1116;
+  position: relative;
+  /* 背景图与 scrim 渐变由内联 :style 注入（见 pageBgStyle）；
+     此处仅保留深色兜底，防止图片加载失败时露白 */
+  background-color: #0e1116;
+  background-position: center;
+  background-size: cover;
   color: #e8e2d5;
+}
+
+/* 全局金色氛围光晕，呼应 accent 与图片暖调 */
+.login-page::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(1000px 640px at 8% 0%, rgba(201, 162, 39, 0.1), transparent 55%),
+    radial-gradient(700px 560px at 100% 100%, rgba(201, 162, 39, 0.07), transparent 60%);
 }
 
 /* 左区品牌 */
@@ -141,10 +160,9 @@ async function handleLogin() {
   flex-direction: column;
   justify-content: space-between;
   padding: clamp(2.5rem, 6vw, 5rem);
-  border-right: 1px solid #2a2f3a;
-  background:
-    linear-gradient(180deg, rgba(201, 162, 39, 0.03) 0%, transparent 40%),
-    #11151c;
+  border-right: 1px solid rgba(201, 162, 39, 0.14);
+  /* 透明底，让背景图在 scrim 渐变下透出；仅保留最左侧的深色收边保证文字对比 */
+  background: linear-gradient(90deg, rgba(9, 11, 15, 0.55) 0%, transparent 70%);
   overflow: hidden;
 }
 
@@ -230,28 +248,22 @@ async function handleLogin() {
   position: relative;
 }
 
-.form-panel::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(600px 480px at 50% 40%, rgba(201, 162, 39, 0.06), transparent 70%);
-}
-
 .login-card {
   position: relative;
   z-index: 1;
   width: 100%;
   max-width: 400px;
   padding: clamp(2rem, 5vw, 2.8rem);
-  background: linear-gradient(160deg, rgba(30, 35, 46, 0.88), rgba(22, 27, 34, 0.92));
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  border: 1px solid rgba(201, 162, 39, 0.22);
+  /* 半透明玻璃卡：背景图在磨砂下透出暖调，与暗色古典主题融合 */
+  background: linear-gradient(160deg, rgba(28, 33, 44, 0.68), rgba(18, 22, 28, 0.82));
+  backdrop-filter: blur(16px) saturate(1.15);
+  -webkit-backdrop-filter: blur(16px) saturate(1.15);
+  border: 1px solid rgba(201, 162, 39, 0.28);
   border-radius: 14px;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.04),
-    0 24px 60px rgba(0, 0, 0, 0.5),
-    0 1px 0 rgba(201, 162, 39, 0.08);
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 24px 64px rgba(0, 0, 0, 0.55),
+    0 2px 12px rgba(0, 0, 0, 0.35);
   animation: card-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
