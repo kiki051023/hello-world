@@ -19,66 +19,75 @@
     </resultMap>
 
     <select id="selectStudentPage" resultMap="StudentResultMap">
-        SELECT s.*, c.clazz_name
-        FROM student s
-        LEFT JOIN clazz c ON s.clazz_id = c.id
-        WHERE s.deleted = 0
-        <if test="scope != null and !scope.unrestricted">
-            AND ( (scope.selfOnly AND s.user_id = scope.userId)
-               OR (scope.departmentId != null AND s.department_id = scope.departmentId)
-               OR (scope.hasClassIds AND s.clazz_id IN <foreach collection="scope.classIds" item="id" open="(" separator="," close=")">#{id}</foreach>)
-               OR (scope.teacherId != null AND EXISTS (SELECT 1 FROM score sc_scope JOIN course co_scope ON co_scope.id = sc_scope.course_id WHERE sc_scope.student_id = s.id AND sc_scope.deleted = 0 AND co_scope.teacher_id = scope.teacherId)) )
-        </if>
-        <if test="name != null and name != ''">
-            AND s.name LIKE CONCAT('%', #{name}, '%')
-        </if>
-        <if test="studentNo != null and studentNo != ''">
-            AND s.student_no LIKE CONCAT('%', #{studentNo}, '%')
-        </if>
-        <if test="clazzId != null">
-            AND s.clazz_id = #{clazzId}
-        </if>
-        ORDER BY s.id DESC
-    </select>
+            SELECT s.*, c.clazz_name
+            FROM student s
+            LEFT JOIN clazz c ON s.clazz_id = c.id
+            WHERE s.deleted = 0
+            <if test="scope != null and !scope.unrestricted">
+                AND (
+                    <if test="scope.selfOnly">s.user_id = #{scope.userId} OR</if>
+                    <if test="scope.departmentId != null">s.department_id = #{scope.departmentId} OR</if>
+                    <if test="scope.hasClassIds and scope.classIds.size() > 0">s.clazz_id IN <foreach collection="scope.classIds" item="id" open="(" separator="," close=")">#{id}</foreach> OR</if>
+                    <if test="scope.teacherId != null">EXISTS (SELECT 1 FROM score sc_scope JOIN course co_scope ON co_scope.id = sc_scope.course_id WHERE sc_scope.student_id = s.id AND sc_scope.deleted = 0 AND co_scope.teacher_id = #{scope.teacherId}) OR</if>
+                    1=0
+                )
+            </if>
+            <if test="name != null and name != ''">
+                AND s.name LIKE CONCAT('%', #{name}, '%')
+            </if>
+            <if test="studentNo != null and studentNo != ''">
+                AND s.student_no LIKE CONCAT('%', #{studentNo}, '%')
+            </if>
+            <if test="clazzId != null">
+                AND s.clazz_id = #{clazzId}
+            </if>
+            ORDER BY s.id DESC
+        </select>
 
-    <select id="selectStudentExport" resultType="java.util.HashMap">
-        SELECT s.student_no AS studentNo, s.name AS name, s.gender AS gender,
-               s.birthday AS birthday, s.phone AS phone,
-               c.clazz_name AS clazzName, s.address AS address
-        FROM student s
-        LEFT JOIN clazz c ON s.clazz_id = c.id
-        WHERE s.deleted = 0
-        <if test="scope != null and !scope.unrestricted">
-            AND ( (scope.selfOnly AND s.user_id = scope.userId)
-               OR (scope.departmentId != null AND s.department_id = scope.departmentId)
-               OR (scope.hasClassIds AND s.clazz_id IN <foreach collection="scope.classIds" item="id" open="(" separator="," close=")">#{id}</foreach>)
-               OR (scope.teacherId != null AND EXISTS (SELECT 1 FROM score sc_scope JOIN course co_scope ON co_scope.id = sc_scope.course_id WHERE sc_scope.student_id = s.id AND sc_scope.deleted = 0 AND co_scope.teacher_id = scope.teacherId)) )
-        </if>
-        <if test="name != null and name != ''">
-            AND s.name LIKE CONCAT('%', #{name}, '%')
-        </if>
-        <if test="studentNo != null and studentNo != ''">
-            AND s.student_no = #{studentNo}
-        </if>
-        <if test="clazzId != null">
-            AND s.clazz_id = #{clazzId}
-        </if>
-        ORDER BY s.id DESC
-    </select>
+        <select id="selectStudentExport" resultType="java.util.HashMap">
+            SELECT s.student_no AS studentNo, s.name AS name, s.gender AS gender,
+                   s.birthday AS birthday, s.phone AS phone,
+                   c.clazz_name AS clazzName, s.address AS address
+            FROM student s
+            LEFT JOIN clazz c ON s.clazz_id = c.id
+            WHERE s.deleted = 0
+            <if test="scope != null and !scope.unrestricted">
+                AND (
+                    <if test="scope.selfOnly">s.user_id = #{scope.userId} OR</if>
+                    <if test="scope.departmentId != null">s.department_id = #{scope.departmentId} OR</if>
+                    <if test="scope.hasClassIds and scope.classIds.size() > 0">s.clazz_id IN <foreach collection="scope.classIds" item="id" open="(" separator="," close=")">#{id}</foreach> OR</if>
+                    <if test="scope.teacherId != null">EXISTS (SELECT 1 FROM score sc_scope JOIN course co_scope ON co_scope.id = sc_scope.course_id WHERE sc_scope.student_id = s.id AND sc_scope.deleted = 0 AND co_scope.teacher_id = #{scope.teacherId}) OR</if>
+                    1=0
+                )
+            </if>
+            <if test="name != null and name != ''">
+                AND s.name LIKE CONCAT('%', #{name}, '%')
+            </if>
+            <if test="studentNo != null and studentNo != ''">
+                AND s.student_no = #{studentNo}
+            </if>
+            <if test="clazzId != null">
+                AND s.clazz_id = #{clazzId}
+            </if>
+            ORDER BY s.id DESC
+        </select>
 
-    <select id="selectIdsByStudentNos" resultType="java.util.HashMap">
-        SELECT id AS id, student_no AS studentNo
-        FROM student
-        WHERE deleted = 0
-        <if test="scope != null and !scope.unrestricted">
-            AND ( (scope.selfOnly AND user_id = scope.userId)
-               OR (scope.departmentId != null AND department_id = scope.departmentId)
-               OR (scope.hasClassIds AND clazz_id IN <foreach collection="scope.classIds" item="id" open="(" separator="," close=")">#{id}</foreach>) )
-        </if>
-          AND student_no IN
-        <foreach collection="studentNos" item="studentNo" open="(" separator="," close=")">
-            #{studentNo}
-        </foreach>
-    </select>
+        <select id="selectIdsByStudentNos" resultType="java.util.HashMap">
+            SELECT id AS id, student_no AS studentNo
+            FROM student
+            WHERE deleted = 0
+            <if test="scope != null and !scope.unrestricted">
+                AND (
+                    <if test="scope.selfOnly">user_id = #{scope.userId} OR</if>
+                    <if test="scope.departmentId != null">department_id = #{scope.departmentId} OR</if>
+                    <if test="scope.hasClassIds and scope.classIds.size() > 0">clazz_id IN <foreach collection="scope.classIds" item="id" open="(" separator="," close=")">#{id}</foreach> OR</if>
+                    1=0
+                )
+            </if>
+              AND student_no IN
+            <foreach collection="studentNos" item="studentNo" open="(" separator="," close=")">
+                #{studentNo}
+            </foreach>
+        </select>
 
 </mapper>

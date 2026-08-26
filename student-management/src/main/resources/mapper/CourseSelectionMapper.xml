@@ -3,6 +3,13 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.example.student.mapper.CourseSelectionMapper">
 
+    <sql id="selectionScopePredicate">
+        <if test="scope.selfOnly">s.user_id = #{scope.userId} OR</if>
+        <if test="scope.departmentId != null">s.department_id = #{scope.departmentId} OR</if>
+        <if test="scope.hasClassIds and scope.classIds.size() > 0">s.clazz_id IN <foreach collection="scope.classIds" item="id" open="(" separator="," close=")">#{id}</foreach> OR</if>
+        1=0
+    </sql>
+
     <select id="selectSelectionPage" resultType="java.util.HashMap">
         SELECT cs.id AS id,
                cs.course_term_id AS courseTermId,
@@ -20,9 +27,7 @@
         JOIN student s ON cs.student_id = s.id AND s.deleted = 0
         WHERE cs.deleted = 0
         <if test="scope != null and !scope.unrestricted">
-            AND ( (scope.selfOnly AND s.user_id = scope.userId)
-               OR (scope.departmentId != null AND s.department_id = scope.departmentId)
-               OR (scope.hasClassIds AND s.clazz_id IN <foreach collection="scope.classIds" item="id" open="(" separator="," close=")">#{id}</foreach>) )
+            AND ( <include refid="selectionScopePredicate"/> )
         </if>
         <if test="courseTermId != null">AND cs.course_term_id = #{courseTermId}</if>
         <if test="studentId != null">AND cs.student_id = #{studentId}</if>
@@ -36,9 +41,7 @@
         JOIN student s ON cs.student_id = s.id AND s.deleted = 0
         WHERE cs.deleted = 0
         <if test="scope != null and !scope.unrestricted">
-            AND ( (scope.selfOnly AND s.user_id = scope.userId)
-               OR (scope.departmentId != null AND s.department_id = scope.departmentId)
-               OR (scope.hasClassIds AND s.clazz_id IN <foreach collection="scope.classIds" item="id" open="(" separator="," close=")">#{id}</foreach>) )
+            AND ( <include refid="selectionScopePredicate"/> )
         </if>
         <if test="courseTermId != null">AND cs.course_term_id = #{courseTermId}</if>
         <if test="studentId != null">AND cs.student_id = #{studentId}</if>

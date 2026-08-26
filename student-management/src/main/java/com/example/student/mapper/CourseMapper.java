@@ -30,9 +30,13 @@ public interface CourseMapper extends BaseMapper<Course> {
             <script>
             SELECT COUNT(*) FROM course c WHERE c.deleted = 0
             <if test="scope != null and !scope.unrestricted">
-              AND ( (scope.teacherId != null AND c.teacher_id = scope.teacherId)
-                 OR (scope.hasCourseIds AND c.id IN
-                     <foreach collection="scope.courseIds" item="id" open="(" separator="," close=")">#{id}</foreach>) )
+              AND (
+                <if test="scope.teacherId != null">c.teacher_id = #{scope.teacherId} OR</if>
+                <if test="scope.hasCourseIds and scope.courseIds.size() > 0">c.id IN
+                    <foreach collection="scope.courseIds" item="id" open="(" separator="," close=")">#{id}</foreach> OR</if>
+                <if test="scope.departmentId != null">EXISTS (SELECT 1 FROM teacher t_scope WHERE t_scope.id = c.teacher_id AND t_scope.deleted = 0 AND t_scope.department_id = #{scope.departmentId}) OR</if>
+                1=0
+              )
             </if>
             </script>
             """)
@@ -43,9 +47,13 @@ public interface CourseMapper extends BaseMapper<Course> {
             <script>
             SELECT c.* FROM course c WHERE c.deleted = 0
             <if test="scope != null and !scope.unrestricted">
-              AND ( (scope.teacherId != null AND c.teacher_id = scope.teacherId)
-                 OR (scope.hasCourseIds AND c.id IN
-                     <foreach collection="scope.courseIds" item="id" open="(" separator="," close=")">#{id}</foreach>) )
+              AND (
+                <if test="scope.teacherId != null">c.teacher_id = #{scope.teacherId} OR</if>
+                <if test="scope.hasCourseIds and scope.courseIds.size() > 0">c.id IN
+                    <foreach collection="scope.courseIds" item="id" open="(" separator="," close=")">#{id}</foreach> OR</if>
+                <if test="scope.departmentId != null">EXISTS (SELECT 1 FROM teacher t_scope WHERE t_scope.id = c.teacher_id AND t_scope.deleted = 0 AND t_scope.department_id = #{scope.departmentId}) OR</if>
+                1=0
+              )
             </if>
             ORDER BY c.id DESC
             </script>

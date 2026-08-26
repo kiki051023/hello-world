@@ -3,15 +3,27 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.example.student.mapper.ScoreMapper">
 
-    <sql id="scoreDataScope">
-        <if test="scope != null and !scope.unrestricted">
-            AND ( (scope.selfOnly AND s.user_id = scope.userId)
-               OR (scope.departmentId != null AND s.department_id = scope.departmentId)
-               OR (scope.hasClassIds AND s.clazz_id IN <foreach collection="scope.classIds" item="id" open="(" separator="," close=")">#{id}</foreach>)
-               OR (scope.teacherId != null AND EXISTS (SELECT 1 FROM course co_scope WHERE co_scope.id = sc.course_id AND co_scope.teacher_id = scope.teacherId))
-               OR (scope.hasCourseIds AND sc.course_id IN <foreach collection="scope.courseIds" item="id" open="(" separator="," close=")">#{id}</foreach>) )
+    <sql id="analysisFilter">
+        <if test="filter != null">
+            <!-- clazzId 用子查询而非 s.clazz_id：部分查询（仅课程维度）未 JOIN student 表 -->
+            <if test="filter.clazzId != null">AND EXISTS (SELECT 1 FROM student sf WHERE sf.id = sc.student_id AND sf.clazz_id = #{filter.clazzId})</if>
+            <if test="filter.courseId != null">AND sc.course_id = #{filter.courseId}</if>
+            <if test="filter.termId != null">AND EXISTS (SELECT 1 FROM course_term ct WHERE ct.id = sc.course_term_id AND ct.term_id = #{filter.termId})</if>
         </if>
     </sql>
+
+    <sql id="scoreDataScope">
+            <if test="scope != null and !scope.unrestricted">
+                AND (
+                    <if test="scope.selfOnly">s.user_id = #{scope.userId} OR</if>
+                    <if test="scope.departmentId != null">s.department_id = #{scope.departmentId} OR</if>
+                    <if test="scope.hasClassIds and scope.classIds.size() > 0">s.clazz_id IN <foreach collection="scope.classIds" item="id" open="(" separator="," close=")">#{id}</foreach> OR</if>
+                    <if test="scope.teacherId != null">EXISTS (SELECT 1 FROM course co_scope WHERE co_scope.id = sc.course_id AND co_scope.teacher_id = #{scope.teacherId}) OR</if>
+                    <if test="scope.hasCourseIds and scope.courseIds.size() > 0">sc.course_id IN <foreach collection="scope.courseIds" item="id" open="(" separator="," close=")">#{id}</foreach> OR</if>
+                    1=0
+                )
+            </if>
+        </sql>
 
     <resultMap id="ScoreResultMap" type="com.example.student.entity.Score">
         <id property="id" column="id"/>
@@ -33,12 +45,16 @@
         LEFT JOIN course c ON sc.course_id = c.id
         WHERE sc.deleted = 0
         <if test="scope != null and !scope.unrestricted">
-            AND ( (scope.selfOnly AND s.user_id = scope.userId)
-               OR (scope.departmentId != null AND s.department_id = scope.departmentId)
-               OR (scope.hasClassIds AND s.clazz_id IN <foreach collection="scope.classIds" item="id" open="(" separator="," close=")">#{id}</foreach>)
-               OR (scope.teacherId != null AND c.teacher_id = scope.teacherId)
-               OR (scope.hasCourseIds AND sc.course_id IN <foreach collection="scope.courseIds" item="id" open="(" separator="," close=")">#{id}</foreach>) )
-        </if>
+                    AND (
+                        <if test="scope.selfOnly">s.user_id = #{scope.userId} OR</if>
+                        <if test="scope.departmentId != null">s.department_id = #{scope.departmentId} OR</if>
+                        <if test="scope.hasClassIds and scope.classIds.size() > 0">s.clazz_id IN <foreach collection="scope.classIds" item="id" open="(" separator="," close=")">#{id}</foreach> OR</if>
+                        <if test="scope.teacherId != null">c.teacher_id = #{scope.teacherId} OR</if>
+                        <if test="scope.hasCourseIds and scope.courseIds.size() > 0">sc.course_id IN <foreach collection="scope.courseIds" item="id" open="(" separator="," close=")">#{id}</foreach> OR</if>
+                        1=0
+                    )
+                </if>
+        <if test="scope != null and scope.hideVoid">AND sc.score_status != 'VOID'</if>
         <if test="studentId != null">
             AND sc.student_id = #{studentId}
         </if>
@@ -47,6 +63,15 @@
         </if>
         <if test="clazzId != null">
             AND s.clazz_id = #{clazzId}
+        </if>
+        <if test="studentName != null and studentName != ''">
+            AND s.name LIKE CONCAT('%', #{studentName}, '%')
+        </if>
+        <if test="scoreStatus != null and scoreStatus != ''">
+            AND sc.score_status = #{scoreStatus}
+        </if>
+        <if test="termId != null">
+            AND EXISTS (SELECT 1 FROM course_term ct WHERE ct.id = sc.course_term_id AND ct.term_id = #{termId})
         </if>
         ORDER BY sc.id DESC
     </select>
@@ -62,12 +87,15 @@
         JOIN course c ON sc.course_id = c.id
         WHERE sc.deleted = 0
         <if test="scope != null and !scope.unrestricted">
-            AND ( (scope.selfOnly AND s.user_id = scope.userId)
-               OR (scope.departmentId != null AND s.department_id = scope.departmentId)
-               OR (scope.hasClassIds AND s.clazz_id IN <foreach collection="scope.classIds" item="id" open="(" separator="," close=")">#{id}</foreach>)
-               OR (scope.teacherId != null AND c.teacher_id = scope.teacherId)
-               OR (scope.hasCourseIds AND sc.course_id IN <foreach collection="scope.courseIds" item="id" open="(" separator="," close=")">#{id}</foreach>) )
-        </if>
+                    AND (
+                        <if test="scope.selfOnly">s.user_id = #{scope.userId} OR</if>
+                        <if test="scope.departmentId != null">s.department_id = #{scope.departmentId} OR</if>
+                        <if test="scope.hasClassIds and scope.classIds.size() > 0">s.clazz_id IN <foreach collection="scope.classIds" item="id" open="(" separator="," close=")">#{id}</foreach> OR</if>
+                        <if test="scope.teacherId != null">c.teacher_id = #{scope.teacherId} OR</if>
+                        <if test="scope.hasCourseIds and scope.courseIds.size() > 0">sc.course_id IN <foreach collection="scope.courseIds" item="id" open="(" separator="," close=")">#{id}</foreach> OR</if>
+                        1=0
+                    )
+                </if>
         <if test="studentId != null">
             AND sc.student_id = #{studentId}
         </if>
@@ -76,6 +104,9 @@
         </if>
         <if test="clazzId != null">
             AND s.clazz_id = #{clazzId}
+        </if>
+        <if test="termId != null">
+            AND EXISTS (SELECT 1 FROM course_term ct WHERE ct.id = sc.course_term_id AND ct.term_id = #{termId})
         </if>
         ORDER BY sc.id DESC
     </select>
@@ -105,12 +136,15 @@
         LEFT JOIN course c ON sc.course_id = c.id
         WHERE sc.deleted = 0
         <if test="scope != null and !scope.unrestricted">
-            AND ( (scope.selfOnly AND s.user_id = scope.userId)
-               OR (scope.departmentId != null AND s.department_id = scope.departmentId)
-               OR (scope.hasClassIds AND s.clazz_id IN <foreach collection="scope.classIds" item="id" open="(" separator="," close=")">#{id}</foreach>)
-               OR (scope.teacherId != null AND c.teacher_id = scope.teacherId)
-               OR (scope.hasCourseIds AND sc.course_id IN <foreach collection="scope.courseIds" item="id" open="(" separator="," close=")">#{id}</foreach>) )
-        </if>
+                    AND (
+                        <if test="scope.selfOnly">s.user_id = #{scope.userId} OR</if>
+                        <if test="scope.departmentId != null">s.department_id = #{scope.departmentId} OR</if>
+                        <if test="scope.hasClassIds and scope.classIds.size() > 0">s.clazz_id IN <foreach collection="scope.classIds" item="id" open="(" separator="," close=")">#{id}</foreach> OR</if>
+                        <if test="scope.teacherId != null">c.teacher_id = #{scope.teacherId} OR</if>
+                        <if test="scope.hasCourseIds and scope.courseIds.size() > 0">sc.course_id IN <foreach collection="scope.courseIds" item="id" open="(" separator="," close=")">#{id}</foreach> OR</if>
+                        1=0
+                    )
+                </if>
         <if test="studentId != null">
             AND sc.student_id = #{studentId}
         </if>
@@ -119,6 +153,9 @@
         </if>
         <if test="clazzId != null">
             AND s.clazz_id = #{clazzId}
+        </if>
+        <if test="termId != null">
+            AND EXISTS (SELECT 1 FROM course_term ct WHERE ct.id = sc.course_term_id AND ct.term_id = #{termId})
         </if>
     </select>
 
@@ -146,6 +183,7 @@
         JOIN course c ON sc.course_id = c.id
         WHERE sc.deleted = 0
         <include refid="scoreDataScope"/>
+        <include refid="analysisFilter"/>
         GROUP BY bucket
         ORDER BY bucket
     </select>
@@ -159,6 +197,7 @@
         JOIN clazz c ON s.clazz_id = c.id
         WHERE sc.deleted = 0
         <include refid="scoreDataScope"/>
+        <include refid="analysisFilter"/>
         GROUP BY c.id, c.clazz_name
         ORDER BY avgScore DESC
     </select>
@@ -171,6 +210,7 @@
         JOIN course c ON sc.course_id = c.id
         WHERE sc.deleted = 0
         <include refid="scoreDataScope"/>
+        <include refid="analysisFilter"/>
         GROUP BY c.id, c.course_name
         ORDER BY passRate DESC
     </select>
@@ -183,6 +223,7 @@
         JOIN course c ON sc.course_id = c.id
         WHERE sc.deleted = 0
         <include refid="scoreDataScope"/>
+        <include refid="analysisFilter"/>
         GROUP BY c.id, c.course_name
         ORDER BY avgScore DESC
     </select>
@@ -195,6 +236,7 @@
         JOIN student s ON sc.student_id = s.id
         WHERE sc.deleted = 0
         <include refid="scoreDataScope"/>
+        <include refid="analysisFilter"/>
         GROUP BY s.id, s.name
         ORDER BY avgScore DESC
         LIMIT #{limit}
@@ -209,6 +251,7 @@
         JOIN course c ON sc.course_id = c.id
         WHERE sc.deleted = 0
         <include refid="scoreDataScope"/>
+        <include refid="analysisFilter"/>
           AND sc.exam_time IS NOT NULL
         GROUP BY examMonth
         ORDER BY examMonth
@@ -224,6 +267,7 @@
         JOIN course c ON sc.course_id = c.id
         WHERE sc.deleted = 0
         <include refid="scoreDataScope"/>
+        <include refid="analysisFilter"/>
     </select>
 
     <!-- 指定学生的各课程成绩（雷达图） -->
@@ -309,15 +353,21 @@
         JOIN course c ON sc.course_id = c.id
         WHERE sc.deleted = 0
         <if test="scope != null and !scope.unrestricted">
-            AND ( (scope.selfOnly AND s.user_id = scope.userId)
-               OR (scope.departmentId != null AND s.department_id = scope.departmentId)
-               OR (scope.hasClassIds AND s.clazz_id IN <foreach collection="scope.classIds" item="id" open="(" separator="," close=")">#{id}</foreach>)
-               OR (scope.teacherId != null AND c.teacher_id = scope.teacherId)
-               OR (scope.hasCourseIds AND sc.course_id IN <foreach collection="scope.courseIds" item="id" open="(" separator="," close=")">#{id}</foreach>) )
-        </if>
+                    AND (
+                        <if test="scope.selfOnly">s.user_id = #{scope.userId} OR</if>
+                        <if test="scope.departmentId != null">s.department_id = #{scope.departmentId} OR</if>
+                        <if test="scope.hasClassIds and scope.classIds.size() > 0">s.clazz_id IN <foreach collection="scope.classIds" item="id" open="(" separator="," close=")">#{id}</foreach> OR</if>
+                        <if test="scope.teacherId != null">c.teacher_id = #{scope.teacherId} OR</if>
+                        <if test="scope.hasCourseIds and scope.courseIds.size() > 0">sc.course_id IN <foreach collection="scope.courseIds" item="id" open="(" separator="," close=")">#{id}</foreach> OR</if>
+                        1=0
+                    )
+                </if>
         <if test="studentId != null">AND sc.student_id = #{studentId}</if>
         <if test="courseId != null">AND sc.course_id = #{courseId}</if>
         <if test="clazzId != null">AND s.clazz_id = #{clazzId}</if>
+        <if test="termId != null">
+            AND EXISTS (SELECT 1 FROM course_term ct WHERE ct.id = sc.course_term_id AND ct.term_id = #{termId})
+        </if>
     </select>
 
 </mapper>

@@ -3,6 +3,13 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.example.student.mapper.TeachingTaskMapper">
 
+    <sql id="teachingTaskScopePredicate">
+        <if test="scope.teacherId != null">tt.teacher_id = #{scope.teacherId} OR</if>
+        <if test="scope.departmentId != null">t.department_id = #{scope.departmentId} OR</if>
+        <if test="scope.hasClassIds and scope.classIds.size() > 0">tt.clazz_id IN <foreach collection="scope.classIds" item="id" open="(" separator="," close=")">#{id}</foreach> OR</if>
+        1=0
+    </sql>
+
     <select id="selectTeachingTaskPage" resultType="java.util.HashMap">
         SELECT tt.id AS id,
                tt.course_term_id AS courseTermId,
@@ -24,9 +31,7 @@
         LEFT JOIN clazz cz ON tt.clazz_id = cz.id
         WHERE tt.deleted = 0
         <if test="scope != null and !scope.unrestricted">
-            AND ( (scope.teacherId != null AND tt.teacher_id = scope.teacherId)
-               OR (scope.departmentId != null AND t.department_id = scope.departmentId)
-               OR (scope.hasClassIds AND tt.clazz_id IN <foreach collection="scope.classIds" item="id" open="(" separator="," close=")">#{id}</foreach>) )
+            AND ( <include refid="teachingTaskScopePredicate"/> )
         </if>
         <if test="teacherId != null">AND tt.teacher_id = #{teacherId}</if>
         <if test="termId != null">AND ct.term_id = #{termId}</if>
@@ -42,9 +47,7 @@
         JOIN teacher t ON tt.teacher_id = t.id AND t.deleted = 0
         WHERE tt.deleted = 0
         <if test="scope != null and !scope.unrestricted">
-            AND ( (scope.teacherId != null AND tt.teacher_id = scope.teacherId)
-               OR (scope.departmentId != null AND t.department_id = scope.departmentId)
-               OR (scope.hasClassIds AND tt.clazz_id IN <foreach collection="scope.classIds" item="id" open="(" separator="," close=")">#{id}</foreach>) )
+            AND ( <include refid="teachingTaskScopePredicate"/> )
         </if>
         <if test="teacherId != null">AND tt.teacher_id = #{teacherId}</if>
         <if test="termId != null">AND ct.term_id = #{termId}</if>

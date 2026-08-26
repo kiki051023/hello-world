@@ -13,16 +13,21 @@
         <result property="headTeacherName" column="head_teacher_name"/>
     </resultMap>
 
+    <sql id="clazzScopePredicate">
+        <if test="scope.departmentId != null">c.department_id = #{scope.departmentId} OR</if>
+        <if test="scope.hasClassIds and scope.classIds.size() > 0">c.id IN <foreach collection="scope.classIds" item="id" open="(" separator="," close=")">#{id}</foreach> OR</if>
+        <if test="scope.teacherId != null">c.head_teacher_id = #{scope.teacherId} OR</if>
+        <if test="!scope.selfOnly and scope.teacherId != null">EXISTS (SELECT 1 FROM student s_scope JOIN score sc_scope ON sc_scope.student_id = s_scope.id JOIN course co_scope ON co_scope.id = sc_scope.course_id WHERE s_scope.clazz_id = c.id AND sc_scope.deleted = 0 AND co_scope.teacher_id = #{scope.teacherId}) OR</if>
+        1=0
+    </sql>
+
     <select id="selectClazzPage" resultMap="ClazzResultMap">
         SELECT c.*, t.name AS head_teacher_name
         FROM clazz c
         LEFT JOIN teacher t ON c.head_teacher_id = t.id
         WHERE c.deleted = 0
         <if test="scope != null and !scope.unrestricted">
-            AND ( (scope.departmentId != null AND c.department_id = scope.departmentId)
-               OR (scope.hasClassIds AND c.id IN <foreach collection="scope.classIds" item="id" open="(" separator="," close=")">#{id}</foreach>)
-               OR (scope.teacherId != null AND c.head_teacher_id = scope.teacherId)
-               OR (scope.selfOnly = false AND scope.teacherId != null AND EXISTS (SELECT 1 FROM student s_scope JOIN score sc_scope ON sc_scope.student_id = s_scope.id JOIN course co_scope ON co_scope.id = sc_scope.course_id WHERE s_scope.clazz_id = c.id AND sc_scope.deleted = 0 AND co_scope.teacher_id = scope.teacherId)) )
+            AND ( <include refid="clazzScopePredicate"/> )
         </if>
         <if test="clazzName != null and clazzName != ''">
             AND c.clazz_name LIKE CONCAT('%', #{clazzName}, '%')

@@ -18,8 +18,11 @@ public interface TeacherMapper extends BaseMapper<Teacher> {
             <script>
             SELECT COUNT(*) FROM teacher t WHERE t.deleted = 0
             <if test="scope != null and !scope.unrestricted">
-              AND ( scope.teacherId != null AND t.id = scope.teacherId
-                 OR (scope.departmentId != null AND t.department_id = scope.departmentId) )
+              AND (
+                <if test="scope.teacherId != null">t.id = #{scope.teacherId} OR</if>
+                <if test="scope.departmentId != null">t.department_id = #{scope.departmentId} OR</if>
+                1=0
+              )
             </if>
             </script>
             """)
@@ -30,8 +33,11 @@ public interface TeacherMapper extends BaseMapper<Teacher> {
             <script>
             SELECT t.* FROM teacher t WHERE t.deleted = 0
             <if test="scope != null and !scope.unrestricted">
-              AND ( scope.teacherId != null AND t.id = scope.teacherId
-                 OR (scope.departmentId != null AND t.department_id = scope.departmentId) )
+              AND (
+                <if test="scope.teacherId != null">t.id = #{scope.teacherId} OR</if>
+                <if test="scope.departmentId != null">t.department_id = #{scope.departmentId} OR</if>
+                1=0
+              )
             </if>
             ORDER BY t.id DESC
             </script>

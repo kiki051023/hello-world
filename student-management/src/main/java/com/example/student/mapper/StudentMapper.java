@@ -32,10 +32,13 @@ public interface StudentMapper extends BaseMapper<Student> {
             <script>
             SELECT COUNT(*) FROM student s WHERE s.deleted = 0
             <if test="scope != null and !scope.unrestricted">
-              AND ( (scope.selfOnly AND s.user_id = scope.userId)
-                 OR (scope.departmentId != null AND s.department_id = scope.departmentId)
-                 OR (scope.hasClassIds AND s.clazz_id IN
-                     <foreach collection="scope.classIds" item="id" open="(" separator="," close=")">#{id}</foreach>) )
+              AND (
+                <if test="scope.selfOnly">s.user_id = #{scope.userId} OR</if>
+                <if test="scope.departmentId != null">s.department_id = #{scope.departmentId} OR</if>
+                <if test="scope.hasClassIds and scope.classIds.size() > 0">s.clazz_id IN
+                    <foreach collection="scope.classIds" item="id" open="(" separator="," close=")">#{id}</foreach> OR</if>
+                1=0
+              )
             </if>
             </script>
             """)

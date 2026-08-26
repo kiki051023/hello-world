@@ -14,15 +14,20 @@
         <result property="teacherName" column="teacher_name"/>
     </resultMap>
 
+    <sql id="courseScopePredicate">
+        <if test="scope.teacherId != null">c.teacher_id = #{scope.teacherId} OR</if>
+        <if test="scope.hasCourseIds and scope.courseIds.size() > 0">c.id IN <foreach collection="scope.courseIds" item="id" open="(" separator="," close=")">#{id}</foreach> OR</if>
+        <if test="scope.departmentId != null">EXISTS (SELECT 1 FROM teacher t_scope WHERE t_scope.id = c.teacher_id AND t_scope.deleted = 0 AND t_scope.department_id = #{scope.departmentId}) OR</if>
+        1=0
+    </sql>
+
     <select id="selectCoursePage" resultMap="CourseResultMap">
         SELECT c.*, t.name AS teacher_name
         FROM course c
         LEFT JOIN teacher t ON c.teacher_id = t.id
         WHERE c.deleted = 0
         <if test="scope != null and !scope.unrestricted">
-            AND ( (scope.teacherId != null AND c.teacher_id = scope.teacherId)
-               OR (scope.hasCourseIds AND c.id IN <foreach collection="scope.courseIds" item="id" open="(" separator="," close=")">#{id}</foreach>)
-               OR (scope.departmentId != null AND EXISTS (SELECT 1 FROM teacher t_scope WHERE t_scope.id = c.teacher_id AND t_scope.department_id = scope.departmentId)) )
+            AND ( <include refid="courseScopePredicate"/> )
         </if>
         <if test="courseName != null and courseName != ''">
             AND c.course_name LIKE CONCAT('%', #{courseName}, '%')
@@ -40,9 +45,7 @@
         LEFT JOIN teacher t ON c.teacher_id = t.id
         WHERE c.deleted = 0
         <if test="scope != null and !scope.unrestricted">
-            AND ( (scope.teacherId != null AND c.teacher_id = scope.teacherId)
-               OR (scope.hasCourseIds AND c.id IN <foreach collection="scope.courseIds" item="id" open="(" separator="," close=")">#{id}</foreach>)
-               OR (scope.departmentId != null AND EXISTS (SELECT 1 FROM teacher t_scope WHERE t_scope.id = c.teacher_id AND t_scope.department_id = scope.departmentId)) )
+            AND ( <include refid="courseScopePredicate"/> )
         </if>
         <if test="courseName != null and courseName != ''">
             AND c.course_name LIKE CONCAT('%', #{courseName}, '%')
@@ -58,10 +61,14 @@
         FROM course
         WHERE deleted = 0
         <if test="scope != null and !scope.unrestricted">
-            AND ( (scope.teacherId != null AND teacher_id = scope.teacherId)
-               OR (scope.hasCourseIds AND id IN <foreach collection="scope.courseIds" item="id" open="(" separator="," close=")">#{id}</foreach>) )
+            AND (
+                <if test="scope.teacherId != null">teacher_id = #{scope.teacherId} OR</if>
+                <if test="scope.hasCourseIds and scope.courseIds.size() > 0">id IN <foreach collection="scope.courseIds" item="id" open="(" separator="," close=")">#{id}</foreach> OR</if>
+                <if test="scope.departmentId != null">EXISTS (SELECT 1 FROM teacher t_scope WHERE t_scope.id = course.teacher_id AND t_scope.deleted = 0 AND t_scope.department_id = #{scope.departmentId}) OR</if>
+                1=0
+            )
         </if>
-          AND course_name IN
+        AND course_name IN
         <foreach collection="courseNames" item="courseName" open="(" separator="," close=")">
             #{courseName}
         </foreach>

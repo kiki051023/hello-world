@@ -23,10 +23,13 @@ public interface ClazzMapper extends BaseMapper<Clazz> {
             <script>
             SELECT COUNT(*) FROM clazz c WHERE c.deleted = 0
             <if test="scope != null and !scope.unrestricted">
-              AND ( (scope.departmentId != null AND c.department_id = scope.departmentId)
-                 OR (scope.hasClassIds AND c.id IN
-                     <foreach collection="scope.classIds" item="id" open="(" separator="," close=")">#{id}</foreach>)
-                 OR (scope.teacherId != null AND c.head_teacher_id = scope.teacherId) )
+              AND (
+                <if test="scope.departmentId != null">c.department_id = #{scope.departmentId} OR</if>
+                <if test="scope.hasClassIds and scope.classIds.size() > 0">c.id IN
+                    <foreach collection="scope.classIds" item="id" open="(" separator="," close=")">#{id}</foreach> OR</if>
+                <if test="scope.teacherId != null">c.head_teacher_id = #{scope.teacherId} OR</if>
+                1=0
+              )
             </if>
             </script>
             """)
@@ -37,10 +40,13 @@ public interface ClazzMapper extends BaseMapper<Clazz> {
             <script>
             SELECT c.* FROM clazz c WHERE c.deleted = 0
             <if test="scope != null and !scope.unrestricted">
-              AND ( (scope.departmentId != null AND c.department_id = scope.departmentId)
-                 OR (scope.hasClassIds AND c.id IN
-                     <foreach collection="scope.classIds" item="id" open="(" separator="," close=")">#{id}</foreach>)
-                 OR (scope.teacherId != null AND c.head_teacher_id = scope.teacherId) )
+              AND (
+                <if test="scope.departmentId != null">c.department_id = #{scope.departmentId} OR</if>
+                <if test="scope.hasClassIds and scope.classIds.size() > 0">c.id IN
+                    <foreach collection="scope.classIds" item="id" open="(" separator="," close=")">#{id}</foreach> OR</if>
+                <if test="scope.teacherId != null">c.head_teacher_id = #{scope.teacherId} OR</if>
+                1=0
+              )
             </if>
             ORDER BY c.id DESC
             </script>
@@ -52,10 +58,13 @@ public interface ClazzMapper extends BaseMapper<Clazz> {
             <script>
             SELECT c.id, c.clazz_name AS clazzName FROM clazz c WHERE c.deleted = 0
             <if test="scope != null and !scope.unrestricted">
-              AND ( (scope.departmentId != null AND c.department_id = scope.departmentId)
-                 OR (scope.hasClassIds AND c.id IN
-                     <foreach collection="scope.classIds" item="id" open="(" separator="," close=")">#{id}</foreach>)
-                 OR (scope.teacherId != null AND c.head_teacher_id = scope.teacherId) )
+              AND (
+                <if test="scope.departmentId != null">c.department_id = #{scope.departmentId} OR</if>
+                <if test="scope.hasClassIds and scope.classIds.size() > 0">c.id IN
+                    <foreach collection="scope.classIds" item="id" open="(" separator="," close=")">#{id}</foreach> OR</if>
+                <if test="scope.teacherId != null">c.head_teacher_id = #{scope.teacherId} OR</if>
+                1=0
+              )
             </if>
             </script>
             """)
