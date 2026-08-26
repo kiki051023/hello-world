@@ -33,3 +33,6 @@ tools/
 *.log
 backend_run.log
 frontend_run.log
+
+# ===== 数据库备份（backup-db.bat 产出到 backups/）=====
+backups/
