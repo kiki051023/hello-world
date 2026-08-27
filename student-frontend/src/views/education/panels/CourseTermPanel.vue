@@ -96,11 +96,21 @@ async function load() {
   }
 }
 
+/** 模板别名：学期筛选/分页均引用 loadCourseTerms */
+async function loadCourseTerms() {
+  await load()
+}
+
 function openDialog() {
   form.termId = null
   form.courseId = null
   form.capacity = 30
   dialogVisible.value = true
+}
+
+/** 模板别名：新增开课按钮引用 openTermDialog */
+function openTermDialog() {
+  openDialog()
 }
 
 async function save() {
@@ -120,6 +130,11 @@ async function toggleStatus(row) {
   await updateCourseTerm({ id: row.id, status: row.status === 1 ? 0 : 1, capacity: row.capacity })
   ElMessage.success('已更新')
   load()
+}
+
+/** 模板别名：停开/开放按钮引用 toggleTermStatus */
+async function toggleTermStatus(row) {
+  await toggleStatus(row)
 }
 
 onMounted(async () => {
