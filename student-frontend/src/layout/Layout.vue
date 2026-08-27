@@ -65,11 +65,14 @@
         <router-view />
       </el-main>
     </el-container>
+
+    <!-- 个人信息 → 修改密码抽屉 -->
+    <ChangePasswordDrawer ref="changePwdDrawerRef" />
   </el-container>
 </template>
 
 <script setup>
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/store/user'
 import { ElMessageBox } from 'element-plus'
@@ -89,10 +92,12 @@ import {
   ArrowDown
 } from '@element-plus/icons-vue'
 import { logout } from '@/api/auth'
+import ChangePasswordDrawer from '@/components/ChangePasswordDrawer.vue'
 
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
+const changePwdDrawerRef = ref(null)
 
 const activeMenu = computed(() => route.path)
 const currentTitle = computed(() => route.meta.title || '')
@@ -167,7 +172,9 @@ onMounted(() => {
 })
 
 function handleCommand(command) {
-  if (command === 'logout') {
+  if (command === 'profile') {
+    changePwdDrawerRef.value?.open()
+  } else if (command === 'logout') {
     ElMessageBox.confirm('确定要退出登录吗？', '提示', {
       confirmButtonText: '确定',
       cancelButtonText: '取消',

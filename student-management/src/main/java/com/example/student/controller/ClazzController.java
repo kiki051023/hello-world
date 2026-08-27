@@ -40,6 +40,9 @@ public class ClazzController {
     @Autowired
     private ImportTaskService importTaskService;
 
+    @Autowired
+    private com.example.student.service.AsyncExportService asyncExportService;
+
     @Operation(summary = "班级列表（分页）")
     @PreAuthorize("hasAnyRole('ADMIN','EDUCATION_ADMIN','DEPARTMENT_LEADER','COUNSELOR','TEACHER','PRACTICE_TEACHER','STUDENT')")
     @GetMapping("/page")
@@ -90,18 +93,38 @@ public class ClazzController {
         return Result.success();
     }
 
-    @Operation(summary = "导出班级(Excel)")
+    @Operation(summary = "导出班级(Excel)；超10,000行转异步任务")
     @PreAuthorize("hasAnyRole('ADMIN','EDUCATION_ADMIN','DEPARTMENT_LEADER','COUNSELOR','TEACHER','PRACTICE_TEACHER')")
     @GetMapping("/export")
-    public void exportClazzs(HttpServletResponse response,
+    public Object exportClazzs(HttpServletResponse response,
                              @RequestParam(required = false) String clazzName,
                              @RequestParam(required = false) String grade) throws IOException {
+        long total = clazzService.countForExport(clazzName, grade);
+        if (total > com.example.student.common.ImportLimits.MAX_EXPORT_ROWS) {
+            String params = "clazzName=" + clazzName + ",grade=" + grade;
+            com.example.student.common.ExportTask task = asyncExportService.submit(
+                    "CLAZZ", params,
+                    () -> clazzService.exportClazzs(clazzName, grade).size());
+            Map<String, Object> result = new HashMap<>();
+            result.put("async", true);
+            result.put("taskNo", task.getTaskNo());
+            result.put("totalRows", total);
+            return Result.success(result);
+        }
         response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
         response.setCharacterEncoding("utf-8");
         String fileName = URLEncoder.encode("班级信息", "UTF-8").replaceAll("\\+", "%20");
         response.setHeader("Content-disposition", "attachment;filename*=utf-8''" + fileName + ".xlsx");
         EasyExcel.write(response.getOutputStream(), ClazzExcel.class)
                 .sheet("班级信息").doWrite(clazzService.exportClazzs(clazzName, grade));
+        return null;
+    }
+
+    @Operation(summary = "异步导出任务状态查询")
+    @PreAuthorize("hasAnyRole('ADMIN','EDUCATION_ADMIN','DEPARTMENT_LEADER','COUNSELOR','TEACHER','PRACTICE_TEACHER')")
+    @GetMapping("/export/status/{taskNo}")
+    public Result<Map<String, Object>> exportStatus(@PathVariable String taskNo) {
+        return Result.success(asyncExportService.status(taskNo));
     }
 
     @Operation(summary = "导入班级(Excel)")

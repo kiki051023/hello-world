@@ -40,6 +40,9 @@ public class StudentController {
     @Autowired
     private ImportTaskService importTaskService;
 
+    @Autowired
+    private com.example.student.service.AsyncExportService asyncExportService;
+
     @Operation(summary = "学生列表（分页）")
     @PreAuthorize("hasAnyRole('ADMIN','EDUCATION_ADMIN','DEPARTMENT_LEADER','COUNSELOR','TEACHER','PRACTICE_TEACHER','STUDENT')")
     @GetMapping("/page")
@@ -84,19 +87,39 @@ public class StudentController {
         return Result.success();
     }
 
-    @Operation(summary = "导出学生(Excel)")
+    @Operation(summary = "导出学生(Excel)；超10,000行转异步任务")
     @PreAuthorize("hasAnyRole('ADMIN','EDUCATION_ADMIN','DEPARTMENT_LEADER','COUNSELOR','TEACHER','PRACTICE_TEACHER')")
     @GetMapping("/export")
-    public void exportStudents(HttpServletResponse response,
+    public Object exportStudents(HttpServletResponse response,
                                @RequestParam(required = false) String name,
                                @RequestParam(required = false) String studentNo,
                                @RequestParam(required = false) Long clazzId) throws IOException {
+        long total = studentService.countForExport(name, studentNo, clazzId);
+        if (total > com.example.student.common.ImportLimits.MAX_EXPORT_ROWS) {
+            String params = "name=" + name + ",studentNo=" + studentNo + ",clazzId=" + clazzId;
+            com.example.student.common.ExportTask task = asyncExportService.submit(
+                    "STUDENT", params,
+                    () -> studentService.exportStudents(name, studentNo, clazzId).size());
+            Map<String, Object> result = new HashMap<>();
+            result.put("async", true);
+            result.put("taskNo", task.getTaskNo());
+            result.put("totalRows", total);
+            return Result.success(result);
+        }
         response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
         response.setCharacterEncoding("utf-8");
         String fileName = URLEncoder.encode("学生信息", "UTF-8").replaceAll("\\+", "%20");
         response.setHeader("Content-disposition", "attachment;filename*=utf-8''" + fileName + ".xlsx");
         EasyExcel.write(response.getOutputStream(), StudentExcel.class)
                 .sheet("学生信息").doWrite(studentService.exportStudents(name, studentNo, clazzId));
+        return null;
+    }
+
+    @Operation(summary = "异步导出任务状态查询")
+    @PreAuthorize("hasAnyRole('ADMIN','EDUCATION_ADMIN','DEPARTMENT_LEADER','COUNSELOR','TEACHER','PRACTICE_TEACHER')")
+    @GetMapping("/export/status/{taskNo}")
+    public Result<Map<String, Object>> exportStatus(@PathVariable String taskNo) {
+        return Result.success(asyncExportService.status(taskNo));
     }
 
     @Operation(summary = "导入学生(Excel)")

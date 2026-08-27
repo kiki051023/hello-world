@@ -80,7 +80,12 @@ public class StudentServiceImpl extends ServiceImpl<StudentMapper, Student> impl
     }
 
     @Override
-    public List<StudentExcel> exportStudents(String name, String studentNo, Long clazzId) {
+        public long countForExport(String name, String studentNo, Long clazzId) {
+            return baseMapper.countForExport(name, studentNo, clazzId, dataScopeService.currentFilter());
+        }
+
+        @Override
+        public List<StudentExcel> exportStudents(String name, String studentNo, Long clazzId) {
         List<Map<String, Object>> rows = baseMapper.selectStudentExport(name, studentNo, clazzId, dataScopeService.currentFilter());
         List<StudentExcel> result = new ArrayList<>();
         for (Map<String, Object> row : rows) {

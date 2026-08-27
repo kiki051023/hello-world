@@ -16,11 +16,17 @@ export const useUserStore = defineStore('user', {
       localStorage.setItem('userInfo', JSON.stringify(userInfo))
     },
     setToken(token) {
+      this.token = token
       localStorage.setItem('token', token)
     },
     setRefreshToken(refreshToken) {
       this.refreshToken = refreshToken
       localStorage.setItem('refreshToken', refreshToken)
+    },
+    /** 改密/换发令牌后：整体替换令牌（旧 token 已失效） */
+    replaceTokens(token, refreshToken) {
+      this.setToken(token)
+      this.setRefreshToken(refreshToken)
     },
     logout() {
       this.userInfo = null

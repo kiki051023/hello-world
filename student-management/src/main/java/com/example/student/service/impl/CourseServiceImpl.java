@@ -77,7 +77,12 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
     }
 
     @Override
-    public List<CourseExcel> exportCourses(String courseName, Long teacherId) {
+        public long countForExport(String courseName, Long teacherId) {
+            return baseMapper.countForExport(courseName, teacherId, dataScopeService.currentFilter());
+        }
+
+        @Override
+        public List<CourseExcel> exportCourses(String courseName, Long teacherId) {
         List<Map<String, Object>> rows = baseMapper.selectCourseExport(courseName, teacherId, dataScopeService.currentFilter());
         List<CourseExcel> result = new ArrayList<>();
         for (Map<String, Object> row : rows) {

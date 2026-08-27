@@ -1,5 +1,12 @@
 import request from '@/utils/request'
 
+export function getCaptcha() {
+  return request({
+    url: '/auth/captcha',
+    method: 'get'
+  })
+}
+
 export function login(data) {
   return request({
     url: '/auth/login',
@@ -21,5 +28,21 @@ export function refresh(refreshToken) {
     method: 'post',
     data: { refreshToken },
     _isRefresh: true
+  })
+}
+
+export function changePassword(data) {
+  return request({
+    url: '/auth/change-password',
+    method: 'post',
+    data
+  })
+}
+
+export function forceChangePassword(data) {
+  return request({
+    url: '/auth/force-change-password',
+    method: 'post',
+    data
   })
 }

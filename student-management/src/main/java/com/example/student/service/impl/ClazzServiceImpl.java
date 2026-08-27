@@ -79,7 +79,12 @@ public class ClazzServiceImpl extends ServiceImpl<ClazzMapper, Clazz> implements
     }
 
     @Override
-    public List<ClazzExcel> exportClazzs(String clazzName, String grade) {
+        public long countForExport(String clazzName, String grade) {
+            return baseMapper.countForExport(clazzName, grade, currentScope());
+        }
+
+        @Override
+        public List<ClazzExcel> exportClazzs(String clazzName, String grade) {
         LambdaQueryWrapper<Clazz> wrapper = new LambdaQueryWrapper<>();
         if (clazzName != null && !clazzName.isEmpty()) wrapper.like(Clazz::getClazzName, clazzName);
         if (grade != null && !grade.isEmpty()) wrapper.eq(Clazz::getGrade, grade);

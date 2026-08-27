@@ -52,6 +52,26 @@
               show-password
             />
           </el-form-item>
+          <el-form-item prop="captchaCode">
+            <div class="captcha-row">
+              <el-input
+                v-model="loginForm.captchaCode"
+                placeholder="验证码"
+                size="large"
+                style="flex: 1"
+                maxlength="4"
+              />
+              <img
+                v-if="captchaImg"
+                :src="captchaImg"
+                alt="验证码"
+                class="captcha-img"
+                title="点击刷新"
+                @click="loadCaptcha"
+              />
+              <span v-else class="captcha-loading" @click="loadCaptcha">加载中…</span>
+            </div>
+          </el-form-item>
           <el-form-item>
             <el-button
               type="primary"
@@ -70,22 +90,29 @@
         </footer>
       </div>
     </section>
+
+    <!-- 首次登录/重置密码后强制改密（不可关闭） -->
+    <ForcePasswordDialog ref="forceDialogRef" @done="onForceDone" />
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { User, Lock } from '@element-plus/icons-vue'
-import { login } from '@/api/auth'
+import { getCaptcha, login } from '@/api/auth'
 import { useUserStore } from '@/store/user'
+import ForcePasswordDialog from '@/components/ForcePasswordDialog.vue'
 import loginBg from '@/assets/login-bg.jpg'
 
 const router = useRouter()
 const userStore = useUserStore()
 const formRef = ref(null)
 const loading = ref(false)
+const captchaImg = ref('')
+const captchaKey = ref('')
+const forceDialogRef = ref(null)
 
 // 背景：轻量 scrim 渐变 + 图片（透视效果，图片清晰可见；import 引用确保 Vite 正确打包）
 const pageBgStyle = {
@@ -94,12 +121,25 @@ const pageBgStyle = {
 
 const loginForm = ref({
   username: '',
-  password: ''
+  password: '',
+  captchaCode: ''
 })
 
 const rules = {
   username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
-  password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
+  password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
+  captchaCode: [{ required: true, message: '请输入验证码', trigger: 'blur' }]
+}
+
+async function loadCaptcha() {
+  try {
+    const res = await getCaptcha()
+    captchaImg.value = res.data.captchaImage
+    captchaKey.value = res.data.captchaKey
+    loginForm.value.captchaCode = ''
+  } catch {
+    // 验证码接口失败不阻塞：留空，用户仍可尝试（后端对缺失验证码也会拒绝）
+  }
 }
 
 async function handleLogin() {
@@ -108,7 +148,10 @@ async function handleLogin() {
     if (valid) {
       loading.value = true
       try {
-        const res = await login(loginForm.value)
+        const res = await login({
+          ...loginForm.value,
+          captchaKey: captchaKey.value
+        })
         userStore.setToken(res.data.token)
         userStore.setRefreshToken(res.data.refreshToken)
         userStore.setUserInfo({
@@ -118,13 +161,27 @@ async function handleLogin() {
           role: res.data.role
         })
         ElMessage.success('登录成功')
-        router.push('/')
+        // 首次登录/管理员重置密码后需强制改密：弹窗拦截，改密成功后才进入系统
+        if (res.data.mustChangePassword) {
+          forceDialogRef.value?.open()
+        } else {
+          router.push('/')
+        }
+      } catch {
+        // 登录失败：刷新验证码（一次性），防连续试探
+        loadCaptcha()
       } finally {
         loading.value = false
       }
     }
   })
 }
+
+function onForceDone() {
+  router.push('/')
+}
+
+onMounted(loadCaptcha)
 </script>
 
 <style scoped>
@@ -318,6 +375,39 @@ async function handleLogin() {
 
 .login-form :deep(.el-input__prefix .el-icon) {
   color: #9a937f;
+}
+
+/* 验证码行 */
+.captcha-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+.captcha-img {
+  width: 110px;
+  height: 40px;
+  border-radius: 8px;
+  border: 1px solid rgba(201, 162, 39, 0.35);
+  cursor: pointer;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+.captcha-img:hover {
+  border-color: #c9a227;
+}
+.captcha-loading {
+  width: 110px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed rgba(201, 162, 39, 0.35);
+  border-radius: 8px;
+  color: #9a937f;
+  font-size: 12px;
+  cursor: pointer;
+  flex-shrink: 0;
 }
 
 /* 登录按钮 */

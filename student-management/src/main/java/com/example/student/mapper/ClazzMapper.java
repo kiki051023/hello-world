@@ -18,7 +18,7 @@ public interface ClazzMapper extends BaseMapper<Clazz> {
     IPage<Clazz> selectClazzPage(Page<Clazz> page, @Param("clazzName") String clazzName,
                                  @Param("grade") String grade, @Param("scope") DataScopeFilter scope);
 
-    /** 范围内班级计数（聚合替代全表加载） */
+    /** 范围内班级计数（统计服务用：仅按 scope 过滤） */
     @Select("""
             <script>
             SELECT COUNT(*) FROM clazz c WHERE c.deleted = 0
@@ -34,6 +34,26 @@ public interface ClazzMapper extends BaseMapper<Clazz> {
             </script>
             """)
     long countScoped(@Param("scope") DataScopeFilter scope);
+
+    /** 班级导出计数：scope + 名称/年级筛选（聚合替代全表加载） */
+    @Select("""
+            <script>
+            SELECT COUNT(*) FROM clazz c WHERE c.deleted = 0
+            <if test="clazzName != null and clazzName != ''">AND c.clazz_name LIKE CONCAT('%', #{clazzName}, '%')</if>
+            <if test="grade != null and grade != ''">AND c.grade = #{grade}</if>
+            <if test="scope != null and !scope.unrestricted">
+              AND (
+                <if test="scope.departmentId != null">c.department_id = #{scope.departmentId} OR</if>
+                <if test="scope.hasClassIds and scope.classIds.size() > 0">c.id IN
+                    <foreach collection="scope.classIds" item="id" open="(" separator="," close=")">#{id}</foreach> OR</if>
+                <if test="scope.teacherId != null">c.head_teacher_id = #{scope.teacherId} OR</if>
+                1=0
+              )
+            </if>
+            </script>
+            """)
+    long countForExport(@Param("clazzName") String clazzName, @Param("grade") String grade,
+                        @Param("scope") DataScopeFilter scope);
 
     /** 范围内全部班级（SQL 级数据范围过滤，替代 selectList(null)+内存过滤） */
     @Select("""

@@ -34,6 +34,12 @@ public class User implements Serializable {
     /** Incremented whenever roles or data scopes change, invalidating stale sessions. */
     private Integer permissionVersion;
 
+    /** 首次登录/管理员重置密码后需强制改密（1=需要，0=正常） */
+    private Integer mustChangePassword;
+
+    /** 最近改密时间（密码过期审计预留） */
+    private LocalDateTime lastPasswordChange;
+
     @TableLogic
     private Integer deleted;
 

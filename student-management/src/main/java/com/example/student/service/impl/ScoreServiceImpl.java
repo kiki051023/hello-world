@@ -177,7 +177,10 @@ public class ScoreServiceImpl extends ServiceImpl<ScoreMapper, Score> implements
                     .filter(t -> t != null && !t.isBlank()).map(String::trim).distinct().toList();
             Map<String, Long> termNameMap = new HashMap<>();
             if (!termInputs.isEmpty()) {
-                List<AcademicTerm> allTerms = academicTermMapper.selectList(null);
+                // 学期字典很小（几十行），全量读取做内存匹配（精确 + 归一化），
+                // 显式排序使匹配结果稳定，避免裸 selectList(null)
+                List<AcademicTerm> allTerms = academicTermMapper.selectList(
+                        new LambdaQueryWrapper<AcademicTerm>().orderByAsc(AcademicTerm::getId));
                 // 精确匹配
                 for (AcademicTerm t : allTerms) {
                     if (termInputs.contains(t.getTermName())) {

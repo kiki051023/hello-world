@@ -43,6 +43,7 @@ public class SecurityConfig {
         List<String> permitAll = new ArrayList<>(List.of(
                 "/api/auth/login",
                 "/api/auth/refresh",
+                "/api/auth/captcha",
                 "/api/system/health",
                 "/favicon.ico"
         ));

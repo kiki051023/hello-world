@@ -24,5 +24,8 @@ public interface ClazzService extends IService<Clazz> {
 
     List<ClazzExcel> exportClazzs(String clazzName, String grade);
 
+    /** 班级导出行数（范围+筛选，聚合计数） */
+    long countForExport(String clazzName, String grade);
+
     ImportResult<ClazzExcel> importClazzs(MultipartFile file);
 }

@@ -69,7 +69,12 @@ public class TeacherServiceImpl extends ServiceImpl<TeacherMapper, Teacher> impl
     }
 
     @Override
-    public List<TeacherExcel> exportTeachers() {
+        public long countForExport() {
+            return baseMapper.countScoped(dataScopeService.currentFilter());
+        }
+
+        @Override
+        public List<TeacherExcel> exportTeachers() {
         List<Teacher> list = getAllTeacher();
         List<TeacherExcel> result = new ArrayList<>();
         for (Teacher t : list) {

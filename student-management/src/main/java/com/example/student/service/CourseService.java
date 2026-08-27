@@ -24,5 +24,8 @@ public interface CourseService extends IService<Course> {
 
     List<CourseExcel> exportCourses(String courseName, Long teacherId);
 
+    /** 课程导出行数（范围+筛选，聚合计数） */
+    long countForExport(String courseName, Long teacherId);
+
     ImportResult<CourseExcel> importCourses(MultipartFile file);
 }

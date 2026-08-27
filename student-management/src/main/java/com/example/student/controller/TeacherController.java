@@ -36,6 +36,9 @@ public class TeacherController {
     @Autowired
     private ImportTaskService importTaskService;
 
+    @Autowired
+    private com.example.student.service.AsyncExportService asyncExportService;
+
     @Operation(summary = "所有教师列表")
     @PreAuthorize("hasAnyRole('ADMIN','EDUCATION_ADMIN','DEPARTMENT_LEADER','COUNSELOR','TEACHER','PRACTICE_TEACHER')")
     @GetMapping("/list")
@@ -75,16 +78,35 @@ public class TeacherController {
         return Result.success();
     }
 
-    @Operation(summary = "导出教师(Excel)")
+    @Operation(summary = "导出教师(Excel)；超10,000行转异步任务")
     @PreAuthorize("hasAnyRole('ADMIN','EDUCATION_ADMIN','DEPARTMENT_LEADER','COUNSELOR','TEACHER','PRACTICE_TEACHER')")
     @GetMapping("/export")
-    public void exportTeachers(HttpServletResponse response) throws IOException {
+    public Object exportTeachers(HttpServletResponse response) throws IOException {
+        long total = teacherService.countForExport();
+        if (total > com.example.student.common.ImportLimits.MAX_EXPORT_ROWS) {
+            com.example.student.common.ExportTask task = asyncExportService.submit(
+                    "TEACHER", "all",
+                    () -> teacherService.exportTeachers().size());
+            Map<String, Object> result = new HashMap<>();
+            result.put("async", true);
+            result.put("taskNo", task.getTaskNo());
+            result.put("totalRows", total);
+            return Result.success(result);
+        }
         response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
         response.setCharacterEncoding("utf-8");
         String fileName = URLEncoder.encode("教师信息", "UTF-8").replaceAll("\\+", "%20");
         response.setHeader("Content-disposition", "attachment;filename*=utf-8''" + fileName + ".xlsx");
         EasyExcel.write(response.getOutputStream(), TeacherExcel.class)
                 .sheet("教师信息").doWrite(teacherService.exportTeachers());
+        return null;
+    }
+
+    @Operation(summary = "异步导出任务状态查询")
+    @PreAuthorize("hasAnyRole('ADMIN','EDUCATION_ADMIN','DEPARTMENT_LEADER','COUNSELOR','TEACHER','PRACTICE_TEACHER')")
+    @GetMapping("/export/status/{taskNo}")
+    public Result<Map<String, Object>> exportStatus(@PathVariable String taskNo) {
+        return Result.success(asyncExportService.status(taskNo));
     }
 
     @Operation(summary = "导入教师(Excel)")

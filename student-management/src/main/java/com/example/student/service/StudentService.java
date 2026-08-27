@@ -23,5 +23,8 @@ public interface StudentService extends IService<Student> {
 
     List<StudentExcel> exportStudents(String name, String studentNo, Long clazzId);
 
+    /** 学生导出行数（范围+筛选，聚合计数） */
+    long countForExport(String name, String studentNo, Long clazzId);
+
     ImportResult<StudentExcel> importStudents(MultipartFile file);
 }

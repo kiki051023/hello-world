@@ -21,5 +21,8 @@ public interface TeacherService extends IService<Teacher> {
 
     List<TeacherExcel> exportTeachers();
 
+    /** 教师导出行数（范围，聚合计数） */
+    long countForExport();
+
     ImportResult<TeacherExcel> importTeachers(MultipartFile file);
 }

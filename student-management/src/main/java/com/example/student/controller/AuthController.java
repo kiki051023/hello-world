@@ -1,9 +1,13 @@
 package com.example.student.controller;
 
 import com.example.student.common.Result;
+import com.example.student.dto.ChangePasswordDTO;
+import com.example.student.dto.ForceChangePasswordDTO;
 import com.example.student.dto.LoginDTO;
 import com.example.student.dto.RefreshDTO;
 import com.example.student.exception.BusinessException;
+import com.example.student.security.AuthorizationService;
+import com.example.student.security.CaptchaService;
 import com.example.student.security.RedisTokenService;
 import com.example.student.service.UserService;
 import com.example.student.utils.JwtUtils;
@@ -34,9 +38,25 @@ public class AuthController {
     @Autowired
     private RedisTokenService redisTokenService;
 
+    @Autowired
+    private AuthorizationService authorizationService;
+
+    @Autowired
+    private CaptchaService captchaService;
+
+    @Operation(summary = "获取登录验证码")
+    @GetMapping("/captcha")
+    public Result<Map<String, String>> captcha() {
+        return Result.success(captchaService.generate());
+    }
+
     @Operation(summary = "登录")
     @PostMapping("/login")
     public Result<Map<String, Object>> login(@Valid @RequestBody LoginDTO loginDTO) {
+        // 验证码校验（一次性）：失败直接拒绝，不消耗登录失败计数
+        if (!captchaService.validate(loginDTO.getCaptchaKey(), loginDTO.getCaptchaCode())) {
+            throw new BusinessException("验证码错误或已过期");
+        }
         return Result.success(userService.login(loginDTO.getUsername(), loginDTO.getPassword()));
     }
 
@@ -56,6 +76,24 @@ public class AuthController {
             }
         }
         return Result.success();
+    }
+
+    @Operation(summary = "修改当前用户密码（成功后换发新令牌）")
+    @PreAuthorize("isAuthenticated()")
+    @PostMapping("/change-password")
+    public Result<Map<String, Object>> changePassword(@Valid @RequestBody ChangePasswordDTO dto) {
+        Long userId = authorizationService.currentUser().getId();
+        Map<String, Object> result = userService.changePassword(userId, dto.getOldPassword(), dto.getNewPassword());
+        return Result.success(result);
+    }
+
+    @Operation(summary = "强制改密（首次登录/管理员重置密码后，须 mustChangePassword=1；成功后换发新令牌）")
+    @PreAuthorize("isAuthenticated()")
+    @PostMapping("/force-change-password")
+    public Result<Map<String, Object>> forceChangePassword(@Valid @RequestBody ForceChangePasswordDTO dto) {
+        Long userId = authorizationService.currentUser().getId();
+        Map<String, Object> result = userService.forceChangePassword(userId, dto.getNewPassword());
+        return Result.success(result);
     }
 
     @Operation(summary = "刷新令牌（用 refreshToken 换取新的 accessToken）")

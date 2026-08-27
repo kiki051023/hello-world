@@ -106,6 +106,8 @@ public class UserManageServiceImpl extends ServiceImpl<UserMapper, User> impleme
         user.setEmployeeType(dto.getEmployeeType());
         user.setStatus(1);
         user.setPermissionVersion(1);
+        // 新用户：首次登录需强制改密（管理员下发初始密码后不允许长期共用）
+        user.setMustChangePassword(1);
         save(user);
 
         if (dto.getRoleIds() != null && !dto.getRoleIds().isEmpty()) {
@@ -142,6 +144,8 @@ public class UserManageServiceImpl extends ServiceImpl<UserMapper, User> impleme
         }
         User user = getUserById(id);
         user.setPassword(passwordEncoder.encode(newPassword));
+        // 管理员重置密码：强制用户下次登录改密
+        user.setMustChangePassword(1);
         bumpPermissionVersion(user, true);
     }
 

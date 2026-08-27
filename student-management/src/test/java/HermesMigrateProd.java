@@ -96,6 +96,23 @@ public class HermesMigrateProd {
                 check("ADMIN has system:* permissions", rs.getInt(1) >= 5, "count=" + rs.getInt(1));
             }
 
+            // ---- 阶段8：P1 密码策略（must_change_password / last_password_change，幂等）----
+            boolean hasMcp;
+            try (ResultSet rs = s.executeQuery(
+                    "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name='sys_user' AND column_name='must_change_password'")) {
+                rs.next(); hasMcp = rs.getInt(1) > 0;
+            }
+            if (!hasMcp) {
+                runScript(c, "src/main/resources/sql/migrations/phase8_password_policy.sql");
+                check("phase8 applied", true, "");
+            } else check("phase8 already present, skip", true, "");
+            // phase8 后置：两列已存在
+            try (ResultSet rs = s.executeQuery(
+                    "SELECT COUNT(*) FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name='sys_user' AND column_name IN ('must_change_password','last_password_change')")) {
+                rs.next();
+                check("sys_user password-policy columns present", rs.getInt(1) == 2, "count=" + rs.getInt(1));
+            }
+
             // ---- post checks ----
             for (String t : new String[]{"student_status_history", "leave_request", "reward_punishment",
                     "hardship_funding", "student_warning", "practice_company", "employment_record"}) {
