@@ -156,15 +156,23 @@ mysql -u root -p < student-management/src/main/resources/sql/init.sql
 
 ### 3. 修改后端配置
 
-编辑 `student-management/src/main/resources/application.yml`：
+后端启动依赖以下环境变量（**已移除 `application.yml` 中的默认回退值，未注入即拒绝启动**）：
 
-```yaml
-spring:
-  datasource:
-    url: jdbc:mysql://localhost:3306/student_db?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
-    username: root
-    password: "你的MySQL密码"
+| 环境变量 | 必填 | 默认 | 说明 |
+|---|---|---|---|
+| `JWT_SECRET` | ✅ | 无（缺失/过短即拒绝启动） | JWT 签名密钥，≥32 字符强随机值 |
+| `DB_PASSWORD` | ✅ | 无（缺失即拒绝启动） | 数据库密码；本地开发可用 `123456` |
+
+本地开发推荐直接用 `start-all.bat`（自动生成 JWT_SECRET 并注入本地 DB_PASSWORD）。手动启动时：
+
+```bash
+cd student-management
+set JWT_SECRET=<你的强随机密钥>
+set DB_PASSWORD=123456        # 替换为你的 MySQL 密码
+mvnw.cmd spring-boot:run
 ```
+
+数据库连接 URL 位于 `student-management/src/main/resources/application.yml`，用户名默认 `root`（可用 `DB_USERNAME` 覆盖）。
 
 ### 4. 启动后端
 
@@ -257,6 +265,15 @@ student ─── N:M ─── course (通过 score 表)
 > 共 31 个接口，详情请访问 Knife4j 文档。
 
 ## 部署说明
+
+### 部署环境变量（生产必配）
+
+| 环境变量 | 必填 | 生产建议 |
+|---|---|---|
+| `JWT_SECRET` | ✅ | 强随机 ≥32 字符，与开发环境不同 |
+| `DB_PASSWORD` | ✅ | 强密码，禁止 123456 之类弱口令 |
+| `CORS_ALLOWED_ORIGINS` | ✅ | 仅填真实前端域名，逗号分隔 |
+| `KNIFE4J_ENABLE` | ❌ | 生产设为 `false` 关闭接口文档 |
 
 ### 后端打包
 

@@ -1,6 +1,8 @@
 package com.example.student.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.student.common.PageQuery;
 import com.example.student.common.Result;
 import com.example.student.audit.OperationLog;
@@ -13,12 +15,12 @@ import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 @Tag(name = "系统接口")
@@ -48,12 +50,14 @@ public class SystemController {
                                                      @RequestParam(required = false) String result) {
         LambdaQueryWrapper<OperationLog> w = new LambdaQueryWrapper<OperationLog>()
                 .eq(result != null && !result.isBlank(), OperationLog::getResult, result)
-                .orderByDesc(OperationLog::getId)
-                .last("LIMIT " + (pageQuery.getCurrent() - 1) * pageQuery.getSize() + ", " + pageQuery.getSize());
-        List<OperationLog> rows = operationLogMapper.selectList(w);
+                .orderByDesc(OperationLog::getId);
+        IPage<OperationLog> page = operationLogMapper.selectPage(
+                new Page<>(pageQuery.getCurrent(), pageQuery.getSize()), w);
         Map<String, Object> data = new HashMap<>();
-        data.put("records", rows);
-        data.put("total", rows.size());
+        data.put("records", page.getRecords());
+        data.put("total", page.getTotal());
+        data.put("current", page.getCurrent());
+        data.put("size", page.getSize());
         return Result.success(data);
     }
 
@@ -64,12 +68,14 @@ public class SystemController {
                                                    @RequestParam(required = false) String status) {
         LambdaQueryWrapper<ImportTask> w = new LambdaQueryWrapper<ImportTask>()
                 .eq(status != null && !status.isBlank(), ImportTask::getStatus, status)
-                .orderByDesc(ImportTask::getId)
-                .last("LIMIT " + (pageQuery.getCurrent() - 1) * pageQuery.getSize() + ", " + pageQuery.getSize());
-        List<ImportTask> rows = importTaskMapper.selectList(w);
+                .orderByDesc(ImportTask::getId);
+        IPage<ImportTask> page = importTaskMapper.selectPage(
+                new Page<>(pageQuery.getCurrent(), pageQuery.getSize()), w);
         Map<String, Object> data = new HashMap<>();
-        data.put("records", rows);
-        data.put("total", rows.size());
+        data.put("records", page.getRecords());
+        data.put("total", page.getTotal());
+        data.put("current", page.getCurrent());
+        data.put("size", page.getSize());
         return Result.success(data);
     }
 }
