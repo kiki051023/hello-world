@@ -23,6 +23,8 @@ public class Course implements Serializable {
 
     private Long teacherId;
 
+    /** 历史遗留字段：course 表无 school_id 列，标注非表字段防止 MyBatis-Plus 全字段 SELECT 报 Unknown column */
+    @TableField(exist = false)
     private Long schoolId;
 
     @TableLogic
