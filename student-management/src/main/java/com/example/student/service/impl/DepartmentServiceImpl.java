@@ -4,10 +4,17 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.example.student.entity.Clazz;
 import com.example.student.entity.Department;
+import com.example.student.entity.Major;
+import com.example.student.entity.Student;
 import com.example.student.exception.BusinessException;
+import com.example.student.mapper.ClazzMapper;
 import com.example.student.mapper.DepartmentMapper;
+import com.example.student.mapper.MajorMapper;
+import com.example.student.mapper.StudentMapper;
 import com.example.student.service.DepartmentService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -16,6 +23,15 @@ import java.util.List;
 @Service
 public class DepartmentServiceImpl extends ServiceImpl<DepartmentMapper, Department>
         implements DepartmentService {
+
+    @Autowired
+    private MajorMapper majorMapper;
+
+    @Autowired
+    private ClazzMapper clazzMapper;
+
+    @Autowired
+    private StudentMapper studentMapper;
 
     @Override
     public IPage<Department> getDepartmentPage(Long current, Long size, String keyword, Long schoolId) {
@@ -63,6 +79,24 @@ public class DepartmentServiceImpl extends ServiceImpl<DepartmentMapper, Departm
     @Override
     public void deleteDepartment(Long id) {
         if (id == null || getById(id) == null) throw new BusinessException("系部不存在");
-        removeById(id);
+        // 删除保护：有专业引用则禁止删除
+        Long majorCount = majorMapper.selectCount(new LambdaQueryWrapper<Major>()
+                .eq(Major::getDepartmentId, id));
+        if (majorCount != null && majorCount > 0) {
+            throw new BusinessException("该系部下存在 " + majorCount + " 个专业，无法删除");
+        }
+        // 删除保护：有班级/学生引用则禁止删除
+        Long clazzCount = clazzMapper.selectCount(new LambdaQueryWrapper<Clazz>()
+                .eq(Clazz::getDepartmentId, id));
+        if (clazzCount != null && clazzCount > 0) {
+            throw new BusinessException("该系部下存在 " + clazzCount + " 个班级，无法删除");
+        }
+        Long studentCount = studentMapper.selectCount(new LambdaQueryWrapper<Student>()
+                .eq(Student::getDepartmentId, id));
+        if (studentCount != null && studentCount > 0) {
+            throw new BusinessException("该系部下存在 " + studentCount + " 名学生，无法删除");
+        }
+        // 用 baseMapper.deleteById（逻辑删除语义相同，且可在无 TableInfo 的单元测试下验证）
+        baseMapper.deleteById(id);
     }
 }

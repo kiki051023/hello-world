@@ -6,6 +6,9 @@ import com.example.student.entity.School;
 import com.example.student.exception.BusinessException;
 import com.example.student.mapper.DepartmentMapper;
 import com.example.student.mapper.MajorMapper;
+import com.example.student.mapper.ClazzMapper;
+import com.example.student.mapper.StudentMapper;
+import com.example.student.mapper.TrainingPlanMapper;
 import com.example.student.mapper.SchoolMapper;
 import com.example.student.service.impl.DepartmentServiceImpl;
 import com.example.student.service.impl.MajorServiceImpl;
@@ -133,5 +136,111 @@ class OrgManageServiceTest {
         m.setMajorCode("M01");
         m.setMajorName("软件技术");
         assertThrows(BusinessException.class, () -> majorService.addMajor(m));
+    }
+
+    // ---------- 删除保护 ----------
+
+    @Test
+    void deleteSchoolBlockedWhenDepartmentsExist() {
+        SchoolServiceImpl svc = new SchoolServiceImpl();
+        ReflectionTestUtils.setField(svc, "baseMapper", schoolMapper);
+        DepartmentMapper deptMapper = mock(DepartmentMapper.class);
+        ReflectionTestUtils.setField(svc, "departmentMapper", deptMapper);
+        when(deptMapper.selectCount(any())).thenReturn(2L);
+        when(schoolMapper.selectById(1L)).thenReturn(new School());
+
+        BusinessException ex = assertThrows(BusinessException.class, () -> svc.deleteSchool(1L));
+        assertTrue(ex.getMessage().contains("2 个系部"));
+        verify(schoolMapper, never()).deleteById(any());
+    }
+
+    @Test
+    void deleteSchoolSucceedsWhenNoDepartments() {
+        SchoolServiceImpl svc = new SchoolServiceImpl();
+        ReflectionTestUtils.setField(svc, "baseMapper", schoolMapper);
+        DepartmentMapper deptMapper = mock(DepartmentMapper.class);
+        ReflectionTestUtils.setField(svc, "departmentMapper", deptMapper);
+        when(deptMapper.selectCount(any())).thenReturn(0L);
+        when(schoolMapper.selectById(1L)).thenReturn(new School());
+        when(schoolMapper.deleteById(1L)).thenReturn(1);
+
+        svc.deleteSchool(1L);
+        verify(schoolMapper).deleteById(1L);
+    }
+
+    @Test
+    void deleteDepartmentBlockedWhenMajorsExist() {
+        DepartmentServiceImpl svc = new DepartmentServiceImpl();
+        DepartmentMapper mapper = mock(DepartmentMapper.class);
+        ReflectionTestUtils.setField(svc, "baseMapper", mapper);
+        when(mapper.selectById(1L)).thenReturn(new Department());
+        MajorMapper majorMapper = mock(MajorMapper.class);
+        when(majorMapper.selectCount(any())).thenReturn(3L);
+        ReflectionTestUtils.setField(svc, "majorMapper", majorMapper);
+        ReflectionTestUtils.setField(svc, "clazzMapper", mock(ClazzMapper.class));
+        ReflectionTestUtils.setField(svc, "studentMapper", mock(StudentMapper.class));
+
+        BusinessException ex = assertThrows(BusinessException.class, () -> svc.deleteDepartment(1L));
+        assertTrue(ex.getMessage().contains("3 个专业"));
+    }
+
+    @Test
+    void deleteDepartmentSucceedsWhenUnreferenced() {
+        DepartmentServiceImpl svc = new DepartmentServiceImpl();
+        DepartmentMapper mapper = mock(DepartmentMapper.class);
+        ReflectionTestUtils.setField(svc, "baseMapper", mapper);
+        when(mapper.selectById(1L)).thenReturn(new Department());
+        MajorMapper majorMapper = mock(MajorMapper.class);
+        when(majorMapper.selectCount(any())).thenReturn(0L);
+        ReflectionTestUtils.setField(svc, "majorMapper", majorMapper);
+        ClazzMapper clazzMapper = mock(ClazzMapper.class);
+        when(clazzMapper.selectCount(any())).thenReturn(0L);
+        ReflectionTestUtils.setField(svc, "clazzMapper", clazzMapper);
+        StudentMapper studentMapper = mock(StudentMapper.class);
+        when(studentMapper.selectCount(any())).thenReturn(0L);
+        ReflectionTestUtils.setField(svc, "studentMapper", studentMapper);
+        when(mapper.deleteById(1L)).thenReturn(1);
+
+        svc.deleteDepartment(1L);
+        verify(mapper).deleteById(1L);
+    }
+
+    @Test
+    void deleteMajorBlockedWhenStudentsExist() {
+        MajorServiceImpl svc = new MajorServiceImpl();
+        MajorMapper mapper = mock(MajorMapper.class);
+        ReflectionTestUtils.setField(svc, "baseMapper", mapper);
+        when(mapper.selectById(1L)).thenReturn(new Major());
+        ClazzMapper clazzMapper = mock(ClazzMapper.class);
+        when(clazzMapper.selectCount(any())).thenReturn(0L);
+        ReflectionTestUtils.setField(svc, "clazzMapper", clazzMapper);
+        StudentMapper studentMapper = mock(StudentMapper.class);
+        when(studentMapper.selectCount(any())).thenReturn(5L);
+        ReflectionTestUtils.setField(svc, "studentMapper", studentMapper);
+        ReflectionTestUtils.setField(svc, "trainingPlanMapper", mock(TrainingPlanMapper.class));
+
+        BusinessException ex = assertThrows(BusinessException.class, () -> svc.deleteMajor(1L));
+        assertTrue(ex.getMessage().contains("5 名学生"));
+    }
+
+    @Test
+    void deleteMajorSucceedsWhenUnreferenced() {
+        MajorServiceImpl svc = new MajorServiceImpl();
+        MajorMapper mapper = mock(MajorMapper.class);
+        ReflectionTestUtils.setField(svc, "baseMapper", mapper);
+        when(mapper.selectById(1L)).thenReturn(new Major());
+        ClazzMapper clazzMapper = mock(ClazzMapper.class);
+        when(clazzMapper.selectCount(any())).thenReturn(0L);
+        ReflectionTestUtils.setField(svc, "clazzMapper", clazzMapper);
+        StudentMapper studentMapper = mock(StudentMapper.class);
+        when(studentMapper.selectCount(any())).thenReturn(0L);
+        ReflectionTestUtils.setField(svc, "studentMapper", studentMapper);
+        TrainingPlanMapper planMapper = mock(TrainingPlanMapper.class);
+        when(planMapper.selectCount(any())).thenReturn(0L);
+        ReflectionTestUtils.setField(svc, "trainingPlanMapper", planMapper);
+        when(mapper.deleteById(1L)).thenReturn(1);
+
+        svc.deleteMajor(1L);
+        verify(mapper).deleteById(1L);
     }
 }

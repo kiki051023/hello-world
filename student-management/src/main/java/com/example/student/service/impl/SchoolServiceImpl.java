@@ -4,10 +4,13 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.example.student.entity.Department;
 import com.example.student.entity.School;
 import com.example.student.exception.BusinessException;
+import com.example.student.mapper.DepartmentMapper;
 import com.example.student.mapper.SchoolMapper;
 import com.example.student.service.SchoolService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -15,6 +18,9 @@ import java.util.List;
 
 @Service
 public class SchoolServiceImpl extends ServiceImpl<SchoolMapper, School> implements SchoolService {
+
+    @Autowired
+    private DepartmentMapper departmentMapper;
 
     @Override
     public IPage<School> getSchoolPage(Long current, Long size, String keyword) {
@@ -59,6 +65,13 @@ public class SchoolServiceImpl extends ServiceImpl<SchoolMapper, School> impleme
     @Override
     public void deleteSchool(Long id) {
         if (id == null || getById(id) == null) throw new BusinessException("学校不存在");
-        removeById(id);
+        // 删除保护：有系部引用则禁止删除
+        Long deptCount = departmentMapper.selectCount(new LambdaQueryWrapper<Department>()
+                .eq(Department::getSchoolId, id));
+        if (deptCount != null && deptCount > 0) {
+            throw new BusinessException("该校下存在 " + deptCount + " 个系部，无法删除");
+        }
+        // 用 baseMapper.deleteById（不走 ServiceImpl.removeById，避免手动构造下 TableInfo 缺失；逻辑删除语义相同）
+        baseMapper.deleteById(id);
     }
 }
