@@ -124,7 +124,7 @@ async function toggleStatus(row) {
 
 onMounted(async () => {
   try {
-    const [termRes, courseRes] = await Promise.all([listTerms(), getCoursePage({ current: 1, size: 200 })])
+    const [termRes, courseRes] = await Promise.all([listTerms(), getCoursePage({ current: 1, size: 100 })])
     termList.value = termRes.data || []
     courseList.value = courseRes.data?.records || []
   } catch { /* 基础数据失败不阻塞列表 */ }

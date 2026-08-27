@@ -114,7 +114,7 @@ async function remove(id) {
 onMounted(async () => {
   load()
   try {
-    const ctRes = await getCourseTermPage({ current: 1, size: 200 })
+    const ctRes = await getCourseTermPage({ current: 1, size: 100 })
     openTerms.value = ctRes.data?.records || []
   } catch { /* 开课列表失败不阻塞 */ }
 })
