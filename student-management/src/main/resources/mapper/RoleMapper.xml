@@ -29,4 +29,29 @@
         JOIN sys_user_role ur ON ur.role_id = ds.role_id
         WHERE ur.user_id = #{userId}
     </select>
+
+    <select id="selectRolesByUserId" resultType="com.example.student.entity.Role">
+        SELECT r.id, r.role_code AS roleCode, r.role_name AS roleName,
+               r.description, r.status, r.deleted
+        FROM sys_role r
+        JOIN sys_user_role ur ON ur.role_id = r.id
+        WHERE ur.user_id = #{userId} AND r.deleted = 0
+        ORDER BY r.id
+    </select>
+
+    <select id="selectPermissionsByRoleId" resultType="com.example.student.entity.Permission">
+        SELECT p.id, p.permission_code AS permissionCode,
+               p.permission_name AS permissionName, p.resource_type AS resourceType,
+               p.resource_path AS resourcePath, p.status
+        FROM sys_permission p
+        JOIN sys_role_permission rp ON rp.permission_id = p.id
+        WHERE rp.role_id = #{roleId} AND p.status = 1
+        ORDER BY p.id
+    </select>
+
+    <select id="selectDataScopesByRoleId" resultType="com.example.student.entity.DataScope">
+        SELECT scope_type AS scopeType, scope_value AS scopeValue
+        FROM sys_data_scope
+        WHERE role_id = #{roleId}
+    </select>
 </mapper>

@@ -67,6 +67,7 @@ public class HermesMigrateProd {
             if (!apply) {
                 System.out.println("\nDRY-RUN complete. Re-run with 'apply' to execute migrations.");
                 done();
+                return; // 关键：dry-run 绝不继续执行 apply 逻辑（此前行数验证的 done() 不退出导致下钻）
             }
 
             if (!existing.contains("student_status_history")) {
@@ -78,6 +79,22 @@ public class HermesMigrateProd {
                 runScript(c, "src/main/resources/sql/migrations/phase4_practice_employment.sql");
                 check("phase4 applied", true, "");
             } else check("phase4 already present, skip", true, "");
+
+            // ---- 阶段7：用户/角色管理端（权限字典 + ADMIN 预置，幂等）----
+            try (ResultSet rs = s.executeQuery(
+                    "SELECT COUNT(*) FROM sys_permission WHERE permission_code IN ('system:user:read','system:user:write','system:role:read','system:role:assign-permission','system:role:assign-data-scope')")) {
+                rs.next();
+                if (rs.getInt(1) == 0) {
+                    runScript(c, "src/main/resources/sql/migrations/phase7_user_role_admin.sql");
+                    check("phase7 applied", true, "");
+                } else check("phase7 already present, skip", true, "");
+            }
+            // phase7 后置：ADMIN 已预置管理权限
+            try (PreparedStatement ps = c.prepareStatement(
+                    "SELECT COUNT(*) FROM sys_role_permission rp JOIN sys_role r ON r.id=rp.role_id WHERE r.role_code='ADMIN' AND rp.permission_id IN (SELECT id FROM sys_permission WHERE permission_code LIKE 'system:%')")) {
+                ResultSet rs = ps.executeQuery(); rs.next();
+                check("ADMIN has system:* permissions", rs.getInt(1) >= 5, "count=" + rs.getInt(1));
+            }
 
             // ---- post checks ----
             for (String t : new String[]{"student_status_history", "leave_request", "reward_punishment",

@@ -45,7 +45,7 @@ const routes = [
       {
         path: 'education',
         name: 'Education',
-        component: () => import('@/views/Education.vue'),
+        component: () => import('@/views/education/index.vue'),
         meta: { title: '教务管理', icon: 'Calendar', roles: ['ADMIN', 'EDUCATION_ADMIN', 'DEPARTMENT_LEADER', 'COUNSELOR', 'TEACHER', 'STUDENT'] }
       },
       {
@@ -57,25 +57,25 @@ const routes = [
       {
         path: 'affairs',
         name: 'Affairs',
-        component: () => import('@/views/Affairs.vue'),
+        component: () => import('@/views/affairs/index.vue'),
         meta: { title: '学生事务', icon: 'Notebook', roles: ['ADMIN', 'EDUCATION_ADMIN', 'DEPARTMENT_LEADER', 'COUNSELOR', 'TEACHER', 'STUDENT'] }
       },
       {
         path: 'practice',
         name: 'Practice',
-        component: () => import('@/views/Practice.vue'),
+        component: () => import('@/views/practice/index.vue'),
         meta: { title: '实习就业', icon: 'Suitcase', roles: ['ADMIN', 'EDUCATION_ADMIN', 'DEPARTMENT_LEADER', 'COUNSELOR', 'TEACHER', 'PRACTICE_TEACHER', 'STUDENT'] }
       },
       {
         path: 'ops',
         name: 'Ops',
-        component: () => import('@/views/Ops.vue'),
+        component: () => import('@/views/ops/index.vue'),
         meta: { title: '运维监控', icon: 'Monitor', roles: ['ADMIN'] }
       },
       {
         path: 'analysis',
         name: 'Analysis',
-        component: () => import('@/views/Analysis.vue'),
+        component: () => import('@/views/analysis/index.vue'),
         meta: { title: '成绩分析', icon: 'TrendCharts', roles: ['ADMIN', 'TEACHER'] }
       },
       {
@@ -83,6 +83,18 @@ const routes = [
         name: 'Teacher',
         component: () => import('@/views/Teacher.vue'),
         meta: { title: '教师管理', icon: 'Avatar', roles: ['ADMIN'] }
+      },
+      {
+        path: 'system/users',
+        name: 'UserManage',
+        component: () => import('@/views/system/userManage/UserManage.vue'),
+        meta: { title: '用户管理', icon: 'User', roles: ['ADMIN'] }
+      },
+      {
+        path: 'system/roles',
+        name: 'RoleManage',
+        component: () => import('@/views/system/roleManage/RoleManage.vue'),
+        meta: { title: '角色管理', icon: 'Avatar', roles: ['ADMIN'] }
       }
     ]
   }

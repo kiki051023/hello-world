@@ -115,6 +115,8 @@ const allMenus = [
   { index: '/affairs', title: '学生事务', icon: Notebook, roles: ['ADMIN', 'EDUCATION_ADMIN', 'DEPARTMENT_LEADER', 'COUNSELOR', 'TEACHER', 'STUDENT'] },
   { index: '/practice', title: '实习就业', icon: Suitcase, roles: ['ADMIN', 'EDUCATION_ADMIN', 'DEPARTMENT_LEADER', 'COUNSELOR', 'TEACHER', 'PRACTICE_TEACHER', 'STUDENT'] },
   { index: '/ops', title: '运维监控', icon: Monitor, roles: ['ADMIN'] },
+  { index: '/system/users', title: '用户管理', icon: User, roles: ['ADMIN'] },
+  { index: '/system/roles', title: '角色管理', icon: Avatar, roles: ['ADMIN'] },
   { index: '/analysis', title: '成绩分析', icon: TrendCharts, roles: ['ADMIN', 'TEACHER', 'STUDENT'] },
   { index: '/teacher', title: '教师管理', icon: Avatar, roles: ['ADMIN'] }
 ]
@@ -141,7 +143,7 @@ const menuGroups = [
   {
     title: '系统',
     icon: Monitor,
-    items: ['/ops'].map((i) => byIndex[i]),
+    items: ['/ops', '/system/users', '/system/roles'].map((i) => byIndex[i]),
     alwaysSub: true
   }
 ]
