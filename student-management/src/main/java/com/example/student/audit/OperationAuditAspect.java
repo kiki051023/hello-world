@@ -1,6 +1,7 @@
 package com.example.student.audit;
 
 import com.example.student.security.AuthorizationService;
+import com.example.student.security.TraceIdFilter;
 import jakarta.servlet.http.HttpServletRequest;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
@@ -29,7 +30,9 @@ public class OperationAuditAspect {
         log.setAction(joinPoint.getSignature().getName());
         log.setRequestMethod(request.getMethod());
         log.setRequestPath(request.getRequestURI());
-        log.setRequestId(request.getHeader("X-Request-Id"));
+        // request_id 优先取 MDC traceId（与日志链路一致），其次兼容旧调用方 X-Request-Id 头
+        String traceId = TraceIdFilter.currentTraceId();
+        log.setRequestId(traceId != null ? traceId : request.getHeader("X-Request-Id"));
         log.setClientIp(request.getRemoteAddr());
         try {
             var user = authorizationService.currentUser();

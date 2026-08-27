@@ -22,6 +22,8 @@ spring:
       port: ${REDIS_PORT:6379}
       password: ${REDIS_PASSWORD:}
       database: ${REDIS_DB:0}
+      # 健康探测/命令超时：Redis 不可达时快速失败（默认 2s）
+      timeout: ${REDIS_TIMEOUT:2s}
 
 # 跨域白名单（逗号分隔）。生产环境必须显式配置可信前端域名，否则前端跨域请求会被拒绝。
 cors:

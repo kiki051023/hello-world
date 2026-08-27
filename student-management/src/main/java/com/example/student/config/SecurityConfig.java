@@ -3,9 +3,12 @@ package com.example.student.config;
 import com.example.student.security.JwtAuthenticationFilter;
 import com.example.student.security.RestAccessDeniedHandler;
 import com.example.student.security.RestAuthenticationEntryPoint;
+import com.example.student.security.TraceIdFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
+import org.springframework.core.Ordered;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -45,6 +48,7 @@ public class SecurityConfig {
                 "/api/auth/refresh",
                 "/api/auth/captcha",
                 "/api/system/health",
+                "/api/system/health/detailed",
                 "/favicon.ico"
         ));
         if (knife4jEnabled) {
@@ -70,6 +74,17 @@ public class SecurityConfig {
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
+    }
+
+    /**
+     * traceId 过滤器注册为最高优先级（先于 Spring Security 过滤链），
+     * 保证认证之前所有请求/日志链路已带 traceId。
+     */
+    @Bean
+    public FilterRegistrationBean<TraceIdFilter> traceIdFilterRegistration() {
+        FilterRegistrationBean<TraceIdFilter> registration = new FilterRegistrationBean<>(new TraceIdFilter());
+        registration.setOrder(Ordered.HIGHEST_PRECEDENCE);
+        return registration;
     }
 
     @Bean

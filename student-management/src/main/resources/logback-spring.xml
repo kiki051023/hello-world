@@ -2,7 +2,7 @@
 <configuration>
     <!-- 日志目录与文件名（可用 -DLOG_HOME 覆盖） -->
     <property name="LOG_HOME" value="${LOG_HOME:-logs}"/>
-    <property name="PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{40} - %msg%n"/>
+    <property name="PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] [%X{traceId:-}] %-5level %logger{40} - %msg%n"/>
 
     <!-- 控制台：开发默认输出 -->
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">

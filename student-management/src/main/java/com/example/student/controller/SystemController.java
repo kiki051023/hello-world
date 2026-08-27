@@ -9,6 +9,7 @@ import com.example.student.audit.OperationLog;
 import com.example.student.entity.ImportTask;
 import com.example.student.mapper.ImportTaskMapper;
 import com.example.student.mapper.OperationLogMapper;
+import com.example.student.service.HealthCheckService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -34,13 +35,25 @@ public class SystemController {
     @Autowired
     private ImportTaskMapper importTaskMapper;
 
+    @Autowired
+    private HealthCheckService healthCheckService;
+
     @Operation(summary = "健康检查")
     @GetMapping("/health")
     public Result<Map<String, Object>> health() {
+        Map<String, String> checks = healthCheckService.checkDependencies();
+        boolean up = healthCheckService.overallStatus(checks).equals("UP");
         Map<String, Object> data = new HashMap<>();
-        data.put("status", "UP");
-        data.put("message", "学生管理系统运行正常");
+        data.put("status", up ? "UP" : "DEGRADED");
+        data.put("message", up ? "学生管理系统运行正常"
+                : "部分依赖不可用：DB=" + checks.get("db") + "，Redis=" + checks.get("redis"));
         return Result.success(data);
+    }
+
+    @Operation(summary = "健康检查明细（逐依赖探测 + 时间戳，供人工排查）")
+    @GetMapping("/health/detailed")
+    public Result<Map<String, Object>> healthDetailed() {
+        return Result.success(healthCheckService.detailed());
     }
 
     @Operation(summary = "审计日志分页（管理员）")
