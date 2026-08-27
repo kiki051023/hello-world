@@ -85,11 +85,17 @@ const routes = [
         meta: { title: '教师管理', icon: 'Avatar', roles: ['ADMIN'] }
       },
       {
-        path: 'system/users',
-        name: 'UserManage',
-        component: () => import('@/views/system/userManage/UserManage.vue'),
-        meta: { title: '用户管理', icon: 'User', roles: ['ADMIN'] }
-      },
+              path: 'system/org',
+              name: 'OrgManage',
+              component: () => import('@/views/system/orgmanage/index.vue'),
+              meta: { title: '组织架构', icon: 'OfficeBuilding', roles: ['ADMIN', 'EDUCATION_ADMIN', 'DEPARTMENT_LEADER', 'COUNSELOR'] }
+            },
+            {
+              path: 'system/users',
+              name: 'UserManage',
+              component: () => import('@/views/system/userManage/UserManage.vue'),
+              meta: { title: '用户管理', icon: 'User', roles: ['ADMIN'] }
+            },
       {
         path: 'system/roles',
         name: 'RoleManage',
