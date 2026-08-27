@@ -11,6 +11,7 @@ import com.example.student.security.DataScopeFilter;
 import com.example.student.security.DataScopeService;
 import com.example.student.security.StudentDataScopeService;
 import com.example.student.service.LeaveRequestService;
+import com.example.student.service.NotificationSender;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -33,6 +34,9 @@ public class LeaveRequestServiceImpl extends ServiceImpl<LeaveRequestMapper, Lea
 
     @Autowired
     private StudentDataScopeService studentDataScopeService;
+
+    @Autowired
+    private NotificationSender notificationSender;
 
     @Override
     public Map<String, Object> getPage(long current, long size, Long studentId, String status) {
@@ -89,6 +93,13 @@ public class LeaveRequestServiceImpl extends ServiceImpl<LeaveRequestMapper, Lea
             if (auth != null) lr.setApproverName(auth.getName());
         } catch (Exception ignored) { }
         updateById(lr);
+        // P2-D 通知：审批结果通知提交学生
+        notificationSender.toStudent(student, "LEAVE",
+                pass ? "请假审批通过" : "请假审批驳回",
+                "您的请假申请（" + (lr.getStartTime() == null ? "" : lr.getStartTime().toLocalDate())
+                        + (lr.getEndTime() == null ? "" : " 至 " + lr.getEndTime().toLocalDate())
+                        + "）已" + (pass ? "通过" : "驳回"),
+                lr.getId());
     }
 
     @Override

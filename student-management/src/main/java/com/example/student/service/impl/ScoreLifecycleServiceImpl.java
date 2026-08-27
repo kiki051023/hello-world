@@ -13,6 +13,7 @@ import com.example.student.mapper.ScoreMapper;
 import com.example.student.mapper.StudentMapper;
 import com.example.student.security.DataScopeService;
 import com.example.student.security.StudentDataScopeService;
+import com.example.student.service.NotificationSender;
 import com.example.student.service.ScoreLifecycleService;
 import com.example.student.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -55,6 +56,9 @@ public class ScoreLifecycleServiceImpl implements ScoreLifecycleService {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private NotificationSender notificationSender;
 
     // ---------- 生命周期流转 ----------
 
@@ -124,6 +128,12 @@ public class ScoreLifecycleServiceImpl implements ScoreLifecycleService {
         int rows = scoreMapper.updateById(score);
         if (rows == 0) throw new BusinessException("成绩已被他人修改，请刷新后重试");
         log(score, "VOID", score.getScore(), null, reason);
+        // P2-D 通知：成绩作废通知学生
+        Student scoreStudent = studentMapper.selectById(score.getStudentId());
+        notificationSender.toStudent(scoreStudent, "SCORE",
+                "成绩作废通知",
+                "您的课程成绩已作废" + (reason == null || reason.isBlank() ? "" : "（原因：" + reason + "）"),
+                score.getId());
         return score;
     }
 

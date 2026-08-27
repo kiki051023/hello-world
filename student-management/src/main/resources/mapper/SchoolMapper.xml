@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.student.mapper.SchoolMapper">
+
+    <select id="selectSchoolPage" resultType="com.example.student.entity.School">
+        SELECT * FROM school
+        WHERE deleted = 0
+        <if test="keyword != null and keyword != ''">
+            AND (school_code LIKE CONCAT('%', #{keyword}, '%') OR school_name LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+        ORDER BY id
+    </select>
+
+</mapper>

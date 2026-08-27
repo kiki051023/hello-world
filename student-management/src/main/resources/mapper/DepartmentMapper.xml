@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.student.mapper.DepartmentMapper">
+
+    <select id="selectDepartmentPage" resultType="com.example.student.entity.Department">
+        SELECT d.*, s.school_name AS schoolName
+        FROM department d
+        LEFT JOIN school s ON s.id = d.school_id AND s.deleted = 0
+        WHERE d.deleted = 0
+        <if test="keyword != null and keyword != ''">
+            AND (d.department_code LIKE CONCAT('%', #{keyword}, '%') OR d.department_name LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+        <if test="schoolId != null">
+            AND d.school_id = #{schoolId}
+        </if>
+        ORDER BY d.id
+    </select>
+
+</mapper>

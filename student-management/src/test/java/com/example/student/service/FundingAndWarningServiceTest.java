@@ -9,6 +9,7 @@ import com.example.student.mapper.StudentMapper;
 import com.example.student.mapper.StudentWarningMapper;
 import com.example.student.security.DataScopeFilter;
 import com.example.student.security.DataScopeService;
+import com.example.student.service.NotificationSender;
 import com.example.student.service.impl.HardshipFundingServiceImpl;
 import com.example.student.service.impl.StudentWarningServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
@@ -132,6 +133,8 @@ class FundingAndWarningServiceTest {
             mapper = mock(StudentWarningMapper.class);
             service = new StudentWarningServiceImpl();
             ReflectionTestUtils.setField(service, "baseMapper", mapper);
+            ReflectionTestUtils.setField(service, "studentMapper", mock(StudentMapper.class));
+            ReflectionTestUtils.setField(service, "notificationSender", mock(NotificationSender.class));
             when(mapper.insert(any(StudentWarning.class))).thenReturn(1);
         }
 

@@ -2,6 +2,7 @@ package com.example.student.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.example.student.entity.Student;
 import com.example.student.entity.StudentWarning;
 import com.example.student.exception.BusinessException;
 import com.example.student.mapper.StudentMapper;
@@ -9,6 +10,7 @@ import com.example.student.mapper.StudentWarningMapper;
 import com.example.student.security.DataScopeFilter;
 import com.example.student.security.DataScopeService;
 import com.example.student.service.StudentWarningService;
+import com.example.student.service.NotificationSender;
 import com.example.student.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.AccessDeniedException;
@@ -33,6 +35,9 @@ public class StudentWarningServiceImpl extends ServiceImpl<StudentWarningMapper,
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private NotificationSender notificationSender;
 
     @Override
     public Map<String, Object> getPage(long current, long size, Long studentId, String status) {
@@ -74,6 +79,15 @@ public class StudentWarningServiceImpl extends ServiceImpl<StudentWarningMapper,
             warn.setStatus("ACTIVE");
             save(warn);
             created++;
+            // P2-D 通知：新预警通知对应学生
+            Student warnedStudent = studentMapper.selectById(e.getKey());
+            if (warnedStudent != null) {
+                notificationSender.toStudent(warnedStudent, "WARNING",
+                        "学业预警提醒",
+                        "您触发「" + warningType + "」学业预警（规则 " + ruleKey
+                                + "，当前值 " + e.getValue() + "，阈值 " + threshold + "），请及时关注",
+                        warn.getId());
+            }
         }
         return created;
     }

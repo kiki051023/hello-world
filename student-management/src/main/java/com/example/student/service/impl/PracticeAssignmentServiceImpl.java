@@ -10,6 +10,7 @@ import com.example.student.mapper.StudentMapper;
 import com.example.student.security.DataScopeFilter;
 import com.example.student.security.DataScopeService;
 import com.example.student.security.StudentDataScopeService;
+import com.example.student.service.NotificationSender;
 import com.example.student.service.PracticeAssignmentService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.AccessDeniedException;
@@ -28,6 +29,9 @@ public class PracticeAssignmentServiceImpl extends ServiceImpl<PracticeAssignmen
 
     @Autowired
     private StudentMapper studentMapper;
+
+    @Autowired
+    private NotificationSender notificationSender;
 
     @Autowired
     private DataScopeService dataScopeService;
@@ -88,6 +92,14 @@ public class PracticeAssignmentServiceImpl extends ServiceImpl<PracticeAssignmen
         assignment.setId(null);
         if (assignment.getStatus() == null) assignment.setStatus("ACTIVE");
         save(assignment);
+        // P2-D 通知：分配结果通知学生
+        Student student = studentMapper.selectById(assignment.getStudentId());
+        notificationSender.toStudent(student, "PRACTICE",
+                "实习岗位分配通知",
+                "您已被分配至" + (assignment.getCompanyName() == null ? "实习单位" : assignment.getCompanyName())
+                        + (assignment.getPositionName() == null ? "" : "（" + assignment.getPositionName() + "）")
+                        + "，请及时查看实习安排",
+                assignment.getId());
     }
 
     @Override

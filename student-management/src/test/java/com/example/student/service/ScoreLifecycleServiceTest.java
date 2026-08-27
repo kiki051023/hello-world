@@ -8,7 +8,8 @@ import com.example.student.mapper.ScoreChangeLogMapper;
 import com.example.student.mapper.ScoreMapper;
 import com.example.student.mapper.StudentMapper;
 import com.example.student.security.DataScopeService;
-import com.example.student.security.StudentDataScopeService;
+import com.example.student.service.NotificationSender;
+import com.example.student.service.ScoreLifecycleService;
 import com.example.student.service.impl.ScoreLifecycleServiceImpl;
 import com.example.student.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
@@ -46,6 +47,7 @@ class ScoreLifecycleServiceTest {
         ReflectionTestUtils.setField(service, "courseMapper", courseMapper);
         ReflectionTestUtils.setField(service, "studentMapper", studentMapper);
         ReflectionTestUtils.setField(service, "dataScopeService", dataScopeService);
+        ReflectionTestUtils.setField(service, "notificationSender", mock(NotificationSender.class));
         when(dataScopeService.canAccessCourse(any())).thenReturn(true);
         when(scoreMapper.updateById(any(Score.class))).thenReturn(1);
         when(changeLogMapper.insert(any())).thenReturn(1);

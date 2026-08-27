@@ -10,6 +10,7 @@ import com.example.student.mapper.StudentMapper;
 import com.example.student.security.DataScopeFilter;
 import com.example.student.security.DataScopeService;
 import com.example.student.service.HardshipFundingService;
+import com.example.student.service.NotificationSender;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -29,6 +30,9 @@ public class HardshipFundingServiceImpl extends ServiceImpl<HardshipFundingMappe
 
     @Autowired
     private DataScopeService dataScopeService;
+
+    @Autowired
+    private NotificationSender notificationSender;
 
     /** 全校权限（ADMIN/EDUCATION_ADMIN）可见敏感备注；其余有范围角色脱敏。 */
     private boolean canSeeSensitive(DataScopeFilter f) {
@@ -95,5 +99,12 @@ public class HardshipFundingServiceImpl extends ServiceImpl<HardshipFundingMappe
         f.setStatus(pass ? "APPROVED" : "REJECTED");
         f.setReviewComment(comment);
         updateById(f);
+        // P2-D 通知：审批结果通知提交学生
+        notificationSender.toStudent(student, "FUND",
+                pass ? "资助申请审批通过" : "资助申请审批驳回",
+                "您的" + (f.getAcademicYear() == null ? "" : f.getAcademicYear() + " ")
+                        + (f.getFundingType() == null ? "资助申请" : f.getFundingType())
+                        + "已" + (pass ? "通过" : "驳回") + (pass ? "，资助金额 " + f.getAmount() : ""),
+                f.getId());
     }
 }

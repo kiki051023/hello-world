@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.student.mapper.MajorMapper">
+
+    <select id="selectMajorPage" resultType="com.example.student.entity.Major">
+        SELECT m.*, dep.department_name AS departmentName
+        FROM major m
+        LEFT JOIN department dep ON dep.id = m.department_id AND dep.deleted = 0
+        WHERE m.deleted = 0
+        <if test="keyword != null and keyword != ''">
+            AND (m.major_code LIKE CONCAT('%', #{keyword}, '%') OR m.major_name LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+        <if test="departmentId != null">
+            AND m.department_id = #{departmentId}
+        </if>
+        ORDER BY m.id
+    </select>
+
+</mapper>

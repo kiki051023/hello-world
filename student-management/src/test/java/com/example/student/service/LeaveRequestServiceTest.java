@@ -8,6 +8,7 @@ import com.example.student.mapper.StudentMapper;
 import com.example.student.security.DataScopeFilter;
 import com.example.student.security.DataScopeService;
 import com.example.student.security.StudentDataScopeService;
+import com.example.student.service.NotificationSender;
 import com.example.student.service.impl.LeaveRequestServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -40,6 +41,7 @@ class LeaveRequestServiceTest {
         ReflectionTestUtils.setField(service, "studentMapper", studentMapper);
         ReflectionTestUtils.setField(service, "dataScopeService", dataScopeService);
         ReflectionTestUtils.setField(service, "studentDataScopeService", studentDataScopeService);
+        ReflectionTestUtils.setField(service, "notificationSender", mock(NotificationSender.class));
 
         Student student = new Student();
         student.setId(9L);
