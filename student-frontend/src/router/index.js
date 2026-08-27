@@ -43,11 +43,17 @@ const routes = [
         meta: { title: '成绩管理', icon: 'DataAnalysis', roles: ['ADMIN', 'TEACHER', 'STUDENT'] }
       },
       {
-        path: 'education',
-        name: 'Education',
-        component: () => import('@/views/education/index.vue'),
-        meta: { title: '教务管理', icon: 'Calendar', roles: ['ADMIN', 'EDUCATION_ADMIN', 'DEPARTMENT_LEADER', 'COUNSELOR', 'TEACHER', 'STUDENT'] }
-      },
+              path: 'education',
+              name: 'Education',
+              component: () => import('@/views/education/index.vue'),
+              meta: { title: '教务管理', icon: 'Calendar', roles: ['ADMIN', 'EDUCATION_ADMIN', 'DEPARTMENT_LEADER', 'COUNSELOR', 'TEACHER', 'STUDENT'] }
+            },
+            {
+              path: 'system/terms',
+              name: 'TermManage',
+              component: () => import('@/views/system/termmanage/index.vue'),
+              meta: { title: '学期管理', icon: 'Calendar', roles: ['ADMIN', 'EDUCATION_ADMIN'] }
+            },
       {
         path: 'score-audit',
         name: 'ScoreAudit',

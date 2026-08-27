@@ -117,6 +117,7 @@ const allMenus = [
   { index: '/clazz', title: '班级管理', icon: OfficeBuilding, roles: ['ADMIN', 'TEACHER'] },
   { index: '/course', title: '课程管理', icon: Reading, roles: ['ADMIN', 'TEACHER'] },
   { index: '/score', title: '成绩管理', icon: DataAnalysis, roles: ['ADMIN', 'TEACHER', 'STUDENT'] },
+  { index: '/system/terms', title: '学期管理', icon: Calendar, roles: ['ADMIN', 'EDUCATION_ADMIN'] },
   { index: '/education', title: '教务管理', icon: Calendar, roles: ['ADMIN', 'EDUCATION_ADMIN', 'DEPARTMENT_LEADER', 'COUNSELOR', 'TEACHER', 'STUDENT'] },
   { index: '/score-audit', title: '成绩审核', icon: Checked, roles: ['ADMIN', 'EDUCATION_ADMIN', 'DEPARTMENT_LEADER', 'TEACHER'] },
   { index: '/affairs', title: '学生事务', icon: Notebook, roles: ['ADMIN', 'EDUCATION_ADMIN', 'DEPARTMENT_LEADER', 'COUNSELOR', 'TEACHER', 'STUDENT'] },
@@ -141,7 +142,7 @@ const menuGroups = [
   {
     title: '教务中心',
     icon: Calendar,
-    items: ['/score', '/score-audit', '/education'].map((i) => byIndex[i])
+    items: ['/score', '/system/terms', '/score-audit', '/education'].map((i) => byIndex[i])
   },
   {
     title: '学务中心',

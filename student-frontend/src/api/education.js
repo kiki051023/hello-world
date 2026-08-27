@@ -7,6 +7,9 @@ export function listTerms(params) {
 export function addTerm(data) {
   return request({ url: '/academic-term', method: 'post', data })
 }
+export function updateTerm(data) {
+  return request({ url: '/academic-term', method: 'put', data })
+}
 
 // ===== 课程开设 =====
 export function getCourseTermPage(params) {
