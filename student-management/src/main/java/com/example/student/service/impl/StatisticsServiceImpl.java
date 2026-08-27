@@ -17,27 +17,21 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
  * 统计服务：全部走数据库聚合，禁止 selectList(null)。
- * 高频指标使用进程内短时缓存（60s），缓存键包含规范化 DataScope 摘要，
- * 不同角色/范围不会串数据；Redis 不可用时此旁路仍安全（仅本进程）。
+ * 高频指标走 DistributedCacheService（Redis 优先，多实例一致；
+ * Redis 故障自动降级为进程内实现），TTL 60s。
+ * 缓存键包含规范化 DataScope 摘要，不同角色/范围不会串数据。
  */
 @Service
 public class StatisticsServiceImpl implements StatisticsService {
 
-    private static final long CACHE_TTL_MS = 60_000L;
-
-    private final Map<String, CacheEntry> cache = new ConcurrentHashMap<>();
+    private static final long CACHE_TTL_SECONDS = 60L;
 
     @Autowired
     private com.example.student.common.DistributedCacheService distributedCache;
-
-    private record CacheEntry(Object value, long expiresAt) {
-        boolean fresh() { return System.currentTimeMillis() < expiresAt; }
-    }
 
     @Autowired
     private StudentMapper studentMapper;
@@ -73,15 +67,9 @@ public class StatisticsServiceImpl implements StatisticsService {
         return sb.toString();
     }
 
-    @SuppressWarnings("unchecked")
     private <T> T cached(String key, java.util.function.Supplier<T> loader) {
-        CacheEntry e = cache.get(key);
-        if (e != null && e.fresh()) return (T) e.value();
-        T value = loader.get();
-        cache.put(key, new CacheEntry(value, System.currentTimeMillis() + CACHE_TTL_MS));
-        // 简单清理过期项，避免长进程内存膨胀
-        if (cache.size() > 512) cache.entrySet().removeIf(en -> !en.getValue().fresh());
-        return value;
+        return distributedCache.getOrLoad(key, CACHE_TTL_SECONDS,
+                k -> loader.get());
     }
 
     @Override
@@ -95,7 +83,7 @@ public class StatisticsServiceImpl implements StatisticsService {
             map.put("courseCount", courseMapper.countScoped(scope));
             map.put("teacherCount", teacherMapper.countScoped(scope));
             map.put("scoreCount", scoreMapper.selectScopedCount(scope));
-            Map<String, BigDecimal> stats = scoreMapper.selectScoreStats(null, null, null, scope);
+            Map<String, BigDecimal> stats = scoreMapper.selectScoreStats(null, null, null, null, scope);
             map.put("avgScore", stats.get("avg"));
             map.put("passRate", stats.get("passRate"));
             map.put("maxScore", stats.get("max"));
@@ -105,12 +93,17 @@ public class StatisticsServiceImpl implements StatisticsService {
     }
 
     @Override
-    public Map<String, Object> getScoreAnalysis() {
+    public Map<String, Object> getScoreAnalysis(Long clazzId, Long courseId, Long termId) {
         DataScopeFilter scope = currentScope();
-        String key = scopeKey(scope, "scoreAnalysis");
+        ScoreMapper.AnalysisFilter filter = new ScoreMapper.AnalysisFilter();
+        filter.setClazzId(clazzId);
+        filter.setCourseId(courseId);
+        filter.setTermId(termId);
+        String key = scopeKey(scope, "scoreAnalysis")
+                + "|fc=" + clazzId + ",kc=" + courseId + ",tm=" + termId;
         return cached(key, () -> {
             Map<String, Object> map = new HashMap<>();
-            List<Map<String, Object>> dist = scoreMapper.selectScoreDistribution(scope);
+            List<Map<String, Object>> dist = scoreMapper.selectScoreDistribution(scope, filter);
             String[] labels = {"0-59", "60-69", "70-79", "80-89", "90-100"};
             int[] counts = new int[5];
             for (Map<String, Object> row : dist) {
@@ -120,14 +113,14 @@ public class StatisticsServiceImpl implements StatisticsService {
             }
             map.put("distributionLabels", Arrays.asList(labels));
             map.put("distributionData", Arrays.stream(counts).boxed().collect(Collectors.toList()));
-            map.put("avgByClazz", scoreMapper.selectAvgByClazz(scope));
-            map.put("passRateByCourse", scoreMapper.selectPassRateByCourse(scope));
-            map.put("avgByCourse", scoreMapper.selectAvgByCourse(scope));
-            map.put("topStudents", scoreMapper.selectTopStudents(10, scope));
-            map.put("trend", scoreMapper.selectScoreTrend(scope));
-            Map<String, Object> pf = scoreMapper.selectPassFail(scope);
-            map.put("passCount", pf.get("passCount") == null ? 0 : pf.get("passCount"));
-            map.put("failCount", pf.get("failCount") == null ? 0 : pf.get("failCount"));
+            map.put("avgByClazz", scoreMapper.selectAvgByClazz(scope, filter));
+            map.put("passRateByCourse", scoreMapper.selectPassRateByCourse(scope, filter));
+            map.put("avgByCourse", scoreMapper.selectAvgByCourse(scope, filter));
+            map.put("topStudents", scoreMapper.selectTopStudents(10, scope, filter));
+            map.put("trend", scoreMapper.selectScoreTrend(scope, filter));
+            Map<String, Object> pf = scoreMapper.selectPassFail(scope, filter);
+            map.put("passCount", (pf == null || pf.get("passCount") == null) ? 0 : pf.get("passCount"));
+            map.put("failCount", (pf == null || pf.get("failCount") == null) ? 0 : pf.get("failCount"));
             return map;
         });
     }

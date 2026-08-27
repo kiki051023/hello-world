@@ -81,6 +81,53 @@ public class DistributedCacheService {
         return ((int[]) v)[0] <= limitPerMinute;
     }
 
+    /** 自增计数器（登录失败计数等），首次自增时设置过期窗口 */
+    public Long incrementCounter(String key, long ttlSeconds) {
+        if (isRedisBacked()) {
+            try {
+                Long count = redis.opsForValue().increment(KEY_PREFIX + key);
+                if (count != null && count == 1L) {
+                    redis.expire(KEY_PREFIX + key, Duration.ofSeconds(ttlSeconds));
+                }
+                return count;
+            } catch (Exception ignored) {
+                // Redis 故障降级到本地
+            }
+        }
+        long window = System.currentTimeMillis() / (ttlSeconds * 1000L);
+        String localKey = key + ":" + window;
+        int[] updated = new int[1];
+        localCache.compute(localKey, (k, v) -> {
+            int prev = 0;
+            if (v instanceof CacheEntry) {
+                Object inner = ((CacheEntry) v).value();
+                if (inner instanceof int[]) {
+                    prev = ((int[]) inner)[0];
+                }
+            }
+            updated[0] = prev + 1;
+            return new CacheEntry(updated, (window + 1) * ttlSeconds * 1000L);
+        });
+        return (long) updated[0];
+    }
+
+    /** 仅当键不存在时写入（锁定标记等），返回 true=写入成功 */
+    public boolean putIfAbsent(String key, Object value, long ttlSeconds) {
+        if (isRedisBacked()) {
+            try {
+                Boolean ok = redis.opsForValue().setIfAbsent(KEY_PREFIX + key,
+                        serialize(value), Duration.ofSeconds(ttlSeconds));
+                return Boolean.TRUE.equals(ok);
+            } catch (Exception ignored) {
+                // Redis 故障降级到本地
+            }
+        }
+        CacheEntry e = localCache.get(key);
+        if (e != null && e.fresh()) return false;
+        localCache.put(key, new CacheEntry(value, System.currentTimeMillis() + ttlSeconds * 1000));
+        return true;
+    }
+
     /** 权限变更时主动清除该用户相关缓存（跨实例生效需 Redis） */
     public void evictByPrefix(String keyPrefix) {
         if (isRedisBacked()) {

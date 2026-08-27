@@ -45,18 +45,19 @@ class StatisticsCacheIsolationTest {
         ReflectionTestUtils.setField(service, "studentDataScopeService",
                 mock(StudentDataScopeService.class));
         ReflectionTestUtils.setField(service, "dataScopeService", dataScopeService);
+        ReflectionTestUtils.setField(service, "distributedCache", newStatefulCacheFake());
 
         Map<String, BigDecimal> stats = new HashMap<>();
         stats.put("avg", BigDecimal.ZERO);
         stats.put("passRate", BigDecimal.ZERO);
         stats.put("max", BigDecimal.ZERO);
         stats.put("min", BigDecimal.ZERO);
-        when(scoreMapper.selectScoreStats(any(), any(), any(), any())).thenReturn(stats);
+        when(scoreMapper.selectScoreStats(any(), any(), any(), any(), any())).thenReturn(stats);
         Map<String, Object> pf = new HashMap<>();
         pf.put("passCount", 0);
         pf.put("failCount", 0);
-        when(scoreMapper.selectPassFail(any())).thenReturn(pf);
-        when(scoreMapper.selectScoreDistribution(any())).thenReturn(java.util.List.of());
+        when(scoreMapper.selectPassFail(any(), any())).thenReturn(pf);
+        when(scoreMapper.selectScoreDistribution(any(), any())).thenReturn(java.util.List.of());
     }
 
     /** 按调用次序返回预设 filter（Mockito thenReturn 链在多次 stub 时会被覆盖，改用队列） */
@@ -101,5 +102,18 @@ class StatisticsCacheIsolationTest {
 
         service.getOverview(); // admin again — TTL 内缓存仍在，不查库
         verify(studentMapper, times(2)).countScoped(any()); // 仍 2 次：admin 结果来自缓存
+    }
+
+    /** 有状态缓存 fake：模拟 DistributedCacheService 的本地降级路径（TTL 内命中返回缓存值） */
+    private com.example.student.common.DistributedCacheService newStatefulCacheFake() {
+        return new com.example.student.common.DistributedCacheService(null) {
+            private final java.util.Map<String, Object> store = new java.util.concurrent.ConcurrentHashMap<>();
+
+            @Override
+            @SuppressWarnings("unchecked")
+            public <T> T getOrLoad(String key, long ttlSeconds, java.util.function.Function<String, T> loader) {
+                return (T) store.computeIfAbsent(key, loader);
+            }
+        };
     }
 }

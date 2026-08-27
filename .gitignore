@@ -25,6 +25,7 @@ student-frontend/stats.html
 
 # ===== 智能体工作区数据 =====
 .workbuddy/
+.superpowers/
 
 # ===== 临时下载的工具 =====
 tools/
@@ -33,6 +34,7 @@ tools/
 *.log
 backend_run.log
 frontend_run.log
+student-management/logs/
 
 # ===== 数据库备份（backup-db.bat 产出到 backups/）=====
 backups/

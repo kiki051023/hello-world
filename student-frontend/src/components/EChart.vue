@@ -4,7 +4,33 @@
 
 <script setup>
 import { ref, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
-import * as echarts from 'echarts'
+// echarts 按需引入：只注册项目用到的图表与组件，体积从 1035KB 降到 ~400KB
+import * as echarts from 'echarts/core'
+import { BarChart, PieChart, RadarChart } from 'echarts/charts'
+import {
+  TitleComponent,
+  TooltipComponent,
+  GridComponent,
+  LegendComponent,
+  DataZoomComponent,
+  MarkLineComponent,
+  GraphicComponent
+} from 'echarts/components'
+import { CanvasRenderer } from 'echarts/renderers'
+
+echarts.use([
+  BarChart,
+  PieChart,
+  RadarChart,
+  TitleComponent,
+  TooltipComponent,
+  GridComponent,
+  LegendComponent,
+  DataZoomComponent,
+  MarkLineComponent,
+  GraphicComponent,
+  CanvasRenderer
+])
 
 const props = defineProps({
   option: {
@@ -29,9 +55,17 @@ function resize() {
   if (chart) chart.resize()
 }
 
+// 图表点击事件透传（用于下钻）
+function onClick(params) {
+  emit('bar-click', params.name, params)
+}
+
+const emit = defineEmits(['bar-click'])
+
 onMounted(async () => {
   await nextTick()
   chart = echarts.init(chartRef.value)
+  chart.on('click', onClick)
   render()
   window.addEventListener('resize', resize)
 })

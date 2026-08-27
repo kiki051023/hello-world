@@ -14,4 +14,6 @@ public class ScoreDTO {
     private String courseName;
     private BigDecimal score;
     private LocalDate examTime;
+    /** 生命周期状态：DRAFT草稿/PENDING待审/APPROVED已审核/REJECTED驳回/VOID作废 */
+    private String scoreStatus;
 }

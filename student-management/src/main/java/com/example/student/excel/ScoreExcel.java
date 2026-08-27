@@ -27,6 +27,10 @@ public class ScoreExcel {
     @DateTimeFormat("yyyy-MM-dd")
     private LocalDate examTime;
 
+    /** 可选：学期名称（如 2025-2026-1），匹配 academic_term.term_name */
+    @ExcelProperty("学期")
+    private String termName;
+
     @ExcelProperty("错误信息")
     private String errorMessage;
 }

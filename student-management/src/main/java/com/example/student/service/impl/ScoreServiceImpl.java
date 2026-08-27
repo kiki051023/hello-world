@@ -7,12 +7,16 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.student.common.ImportLimits;
 import com.example.student.common.ImportResult;
+import com.example.student.entity.AcademicTerm;
 import com.example.student.entity.Course;
+import com.example.student.entity.CourseTerm;
 import com.example.student.entity.Score;
 import com.example.student.entity.Student;
 import com.example.student.exception.BusinessException;
 import com.example.student.excel.ScoreExcel;
 import com.example.student.mapper.CourseMapper;
+import com.example.student.mapper.CourseTermMapper;
+import com.example.student.mapper.AcademicTermMapper;
 import com.example.student.mapper.ScoreMapper;
 import com.example.student.mapper.StudentMapper;
 import com.example.student.security.StudentDataScopeService;
@@ -43,18 +47,26 @@ public class ScoreServiceImpl extends ServiceImpl<ScoreMapper, Score> implements
     private CourseMapper courseMapper;
 
     @Autowired
+    private CourseTermMapper courseTermMapper;
+
+    @Autowired
+    private AcademicTermMapper academicTermMapper;
+
+    @Autowired
     private StudentDataScopeService studentDataScopeService;
 
     @Autowired
     private DataScopeService dataScopeService;
 
     @Override
-    public IPage<Score> getScorePage(Long current, Long size, Long studentId, Long courseId, Long clazzId) {
+    public IPage<Score> getScorePage(Long current, Long size, Long studentId, Long courseId, Long clazzId, Long termId, String studentName, String scoreStatus) {
         Page<Score> page = new Page<>(current, size);
         Long scopedStudentId = studentDataScopeService.resolveStudentId(studentId);
+        String trimmedName = (studentName == null || studentName.isBlank()) ? null : studentName.trim();
+        String status = (scoreStatus == null || scoreStatus.isBlank()) ? null : scoreStatus.trim();
         return dataScopeService == null
-                ? baseMapper.selectScorePage(page, scopedStudentId, courseId, clazzId)
-                : baseMapper.selectScorePage(page, scopedStudentId, courseId, clazzId, currentScope());
+                ? baseMapper.selectScorePage(page, scopedStudentId, courseId, clazzId, termId, trimmedName, status, null)
+                : baseMapper.selectScorePage(page, scopedStudentId, courseId, clazzId, termId, trimmedName, status, currentScope());
     }
 
     @Override
@@ -101,9 +113,9 @@ public class ScoreServiceImpl extends ServiceImpl<ScoreMapper, Score> implements
     }
 
     @Override
-    public Map<String, BigDecimal> getScoreStats(Long courseId, Long clazzId) {
+    public Map<String, BigDecimal> getScoreStats(Long courseId, Long clazzId, Long termId) {
         Long scopedStudentId = studentDataScopeService.resolveStudentId(null);
-        Map<String, BigDecimal> stats = baseMapper.selectScoreStats(scopedStudentId, courseId, clazzId, dataScopeService.currentFilter());
+        Map<String, BigDecimal> stats = baseMapper.selectScoreStats(scopedStudentId, courseId, clazzId, termId, dataScopeService.currentFilter());
         if (stats == null) {
             stats = new HashMap<>();
             stats.put("avg", BigDecimal.ZERO);
@@ -115,10 +127,10 @@ public class ScoreServiceImpl extends ServiceImpl<ScoreMapper, Score> implements
     }
 
     @Override
-    public List<ScoreExcel> exportScores(Long studentId, Long courseId, Long clazzId) {
+    public List<ScoreExcel> exportScores(Long studentId, Long courseId, Long clazzId, Long termId) {
         List<Map<String, Object>> rows = dataScopeService == null
-                ? baseMapper.selectScoreExport(studentId, courseId, clazzId)
-                : baseMapper.selectScoreExport(studentId, courseId, clazzId, currentScope());
+                ? baseMapper.selectScoreExport(studentId, courseId, clazzId, termId, null)
+                : baseMapper.selectScoreExport(studentId, courseId, clazzId, termId, currentScope());
         List<ScoreExcel> result = new ArrayList<>();
         for (Map<String, Object> row : rows) {
             ScoreExcel e = new ScoreExcel();
@@ -158,6 +170,47 @@ public class ScoreServiceImpl extends ServiceImpl<ScoreMapper, Score> implements
                     courseMapper.selectIdsByCourseNames(courseNames, currentScope()).stream()
                             .collect(Collectors.toMap(row -> (String) row.get("courseName"),
                                     row -> ((Number) row.get("id")).longValue(), (a, b) -> a));
+            // 批量预解析学期：termName -> termId（academic_term）。
+            // 匹配策略：先精确匹配 term_name；未命中的再做归一化模糊匹配
+            //（去空格/全角转半角/「学年」可省略/连字符统一，如 "2025-2026-1" 匹配 "2025-2026学年第一学期"）
+            List<String> termInputs = data.stream().map(ScoreExcel::getTermName)
+                    .filter(t -> t != null && !t.isBlank()).map(String::trim).distinct().toList();
+            Map<String, Long> termNameMap = new HashMap<>();
+            if (!termInputs.isEmpty()) {
+                List<AcademicTerm> allTerms = academicTermMapper.selectList(null);
+                // 精确匹配
+                for (AcademicTerm t : allTerms) {
+                    if (termInputs.contains(t.getTermName())) {
+                        termNameMap.put(t.getTermName(), t.getId());
+                    }
+                }
+                // 归一化模糊匹配：仅处理精确未命中的输入
+                Map<String, String> normToOriginal = new HashMap<>();
+                for (String input : termInputs) {
+                    if (!termNameMap.containsKey(input)) {
+                        normToOriginal.put(normalizeTerm(input), input);
+                    }
+                }
+                for (AcademicTerm t : allTerms) {
+                    String norm = normalizeTerm(t.getTermName());
+                    String original = normToOriginal.get(norm);
+                    if (original != null && !termNameMap.containsKey(original)) {
+                        termNameMap.put(original, t.getId());
+                    }
+                }
+            }
+            // (termId, courseId) -> courseTermId，一次查出本文件涉及的所有组合
+            Map<String, Long> courseTermMap = new HashMap<>();
+            if (!termNameMap.isEmpty() && !courseNameMap.isEmpty()) {
+                List<Long> termIds = new ArrayList<>(termNameMap.values());
+                List<Long> cIds = new ArrayList<>(courseNameMap.values());
+                for (CourseTerm ct : courseTermMapper.selectList(
+                        new LambdaQueryWrapper<CourseTerm>()
+                                .in(CourseTerm::getTermId, termIds)
+                                .in(CourseTerm::getCourseId, cIds))) {
+                    courseTermMap.put(ct.getTermId() + ":" + ct.getCourseId(), ct.getId());
+                }
+            }
             List<Long> studentIds = new ArrayList<>(studentNoMap.values());
             List<Long> courseIds = new ArrayList<>(courseNameMap.values());
             java.util.Set<String> existingPairs = new java.util.HashSet<>();
@@ -196,11 +249,28 @@ public class ScoreServiceImpl extends ServiceImpl<ScoreMapper, Score> implements
                     result.getFailRows().add(e);
                     continue;
                 }
+                // 学期列可选；填了但匹配不到学期/开课记录则报错，避免静默丢失学期归属
+                Long courseTermId = null;
+                if (e.getTermName() != null && !e.getTermName().isBlank()) {
+                    Long termId = termNameMap.get(e.getTermName().trim());
+                    if (termId == null) {
+                        e.setErrorMessage("学期不存在(" + e.getTermName() + ")");
+                        result.getFailRows().add(e);
+                        continue;
+                    }
+                    courseTermId = courseTermMap.get(termId + ":" + cid);
+                    if (courseTermId == null) {
+                        e.setErrorMessage("该课程未在学期(" + e.getTermName() + ")开设");
+                        result.getFailRows().add(e);
+                        continue;
+                    }
+                }
                 Score s = new Score();
                 s.setStudentId(sid);
                 s.setCourseId(cid);
                 s.setScore(e.getScore());
                 s.setExamTime(e.getExamTime());
+                s.setCourseTermId(courseTermId);
                 // 与手工录入一致：导入成绩同样进入草稿态，经提交/审核后生效
                 s.setScoreStatus("DRAFT");
                 s.setActive(0);
@@ -218,11 +288,11 @@ public class ScoreServiceImpl extends ServiceImpl<ScoreMapper, Score> implements
     }
 
     @Override
-    public long countForExport(Long studentId, Long courseId, Long clazzId) {
+    public long countForExport(Long studentId, Long courseId, Long clazzId, Long termId) {
         Long scopedStudentId = studentDataScopeService.resolveStudentId(studentId);
         return dataScopeService == null
-                ? baseMapper.countForExport(scopedStudentId, courseId, clazzId)
-                : baseMapper.countForExport(scopedStudentId, courseId, clazzId, currentScope());
+                ? baseMapper.countForExport(scopedStudentId, courseId, clazzId, termId, null)
+                : baseMapper.countForExport(scopedStudentId, courseId, clazzId, termId, currentScope());
     }
 
     @Override
@@ -240,5 +310,29 @@ public class ScoreServiceImpl extends ServiceImpl<ScoreMapper, Score> implements
 
     private DataScopeFilter currentScope() {
         return dataScopeService == null ? null : dataScopeService.currentFilter();
+    }
+
+    /**
+     * 学期名归一化，用于 Excel 导入的模糊匹配：
+     * 去空白、全角转半角、统一连字符、去掉「学年」「学期」「第」等修饰词、
+     * 中文数字学期转数字（第一→1），使 "2025-2026-1"、"2025—2026第1学期"、"2025-2026学年第一学期" 归一为同一形式。
+     */
+    public static String normalizeTerm(String name) {
+        if (name == null) return "";
+        String s = name.trim()
+                .replace('（', '(').replace('）', ')')
+                .replace('－', '-').replace('—', '-').replace('–', '-').replace('～', '-').replace('~', '-')
+                .replace('　', ' ')
+                .replaceAll("\\s+", "");
+        // 先中文数字转阿拉伯数字（一至十），再以 '-' 替换修饰词「学年/学期/第」并压缩重复连字符，
+        // 使 "2025-2026学年第一学期" → 2025-2026-1，与简写 "2025-2026-1" 一致
+        String[] cn = {"十", "九", "八", "七", "六", "五", "四", "三", "二", "一", "零"};
+        for (int i = 0; i < cn.length; i++) {
+            s = s.replace(cn[i], String.valueOf(cn.length - 1 - i));
+        }
+        s = s.replace("学年", "-").replace("学期", "-").replace("第", "-");
+        s = s.replaceAll("-+", "-");
+        if (s.endsWith("-")) s = s.substring(0, s.length() - 1);
+        return s;
     }
 }

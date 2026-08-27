@@ -45,6 +45,8 @@ public class DataScopeService {
         filter.setDepartmentId(user.getDepartmentId());
         filter.setUnrestricted(roles.stream().anyMatch(Set.of("ADMIN", "EDUCATION_ADMIN", "SCHOOL_LEADER")::contains));
         filter.setSelfOnly(roles.contains("STUDENT") && !filter.isUnrestricted());
+        // 学生视角强制隐藏作废成绩（VOID 仅教师/管理可见，用于追溯）
+        filter.setHideVoid(roles.contains("STUDENT") && !filter.isUnrestricted());
 
         if (roles.contains("TEACHER") || roles.contains("PRACTICE_TEACHER")) {
             Teacher teacher = teacherMapper.selectOne(new LambdaQueryWrapper<Teacher>().eq(Teacher::getUserId, user.getId()));

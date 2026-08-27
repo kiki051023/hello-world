@@ -27,18 +27,27 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     @Autowired
     private RedisTokenService redisTokenService;
 
+    @Autowired
+    private com.example.student.security.LoginLockoutService loginLockoutService;
+
     @Override
     public Map<String, Object> login(String username, String password) {
+        if (loginLockoutService.isLocked(username)) {
+            throw new BusinessException("失败次数过多，账号已临时锁定，请15分钟后重试");
+        }
         User user = getByUsername(username);
         if (user == null) {
+            loginLockoutService.recordFailure(username);
             throw new BusinessException("用户不存在");
         }
         if (user.getStatus() != null && user.getStatus() == 0) {
             throw new BusinessException("账号已被禁用");
         }
         if (!passwordEncoder.matches(password, user.getPassword())) {
+            loginLockoutService.recordFailure(username);
             throw new BusinessException("密码错误");
         }
+        loginLockoutService.resetFailures(username);
         Integer permissionVersion = user.getPermissionVersion() == null ? 1 : user.getPermissionVersion();
         String accessToken = jwtUtils.generateAccessToken(user.getId(), user.getUsername(), user.getRole(), permissionVersion);
         String refreshToken = jwtUtils.generateRefreshToken(user.getId(), user.getUsername(), user.getRole(), permissionVersion);

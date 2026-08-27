@@ -9,6 +9,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Map;
@@ -28,11 +29,13 @@ public class StatisticsController {
         return Result.success(statisticsService.getOverview());
     }
 
-    @Operation(summary = "成绩深度分析（分布/班级/课程/Top/趋势/及格率）")
+    @Operation(summary = "成绩深度分析（分布/班级/课程/Top/趋势/及格率），支持班级/课程/学期筛选")
     @PreAuthorize("hasAnyRole('ADMIN','EDUCATION_ADMIN','DEPARTMENT_LEADER','COUNSELOR','TEACHER','PRACTICE_TEACHER','SCHOOL_LEADER')")
     @GetMapping("/score-analysis")
-    public Result<Map<String, Object>> scoreAnalysis() {
-        return Result.success(statisticsService.getScoreAnalysis());
+    public Result<Map<String, Object>> scoreAnalysis(@RequestParam(required = false) Long clazzId,
+                                                     @RequestParam(required = false) Long courseId,
+                                                     @RequestParam(required = false) Long termId) {
+        return Result.success(statisticsService.getScoreAnalysis(clazzId, courseId, termId));
     }
 
     @Operation(summary = "单个学生各课程成绩雷达")

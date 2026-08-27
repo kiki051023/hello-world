@@ -63,6 +63,25 @@
             />
           </el-select>
         </el-form-item>
+        <el-form-item label="学期">
+          <el-select v-model="queryForm.termId" placeholder="全部学期" clearable style="width: 180px;">
+            <el-option
+              v-for="t in termList"
+              :key="t.id"
+              :label="t.termName"
+              :value="t.id"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="状态">
+          <el-select v-model="queryForm.scoreStatus" placeholder="全部状态" clearable style="width: 130px;">
+            <el-option label="草稿" value="DRAFT" />
+            <el-option label="待审核" value="PENDING" />
+            <el-option label="已审核" value="APPROVED" />
+            <el-option label="已驳回" value="REJECTED" />
+            <el-option label="已作废" value="VOID" />
+          </el-select>
+        </el-form-item>
         <el-form-item>
           <el-button type="primary" :icon="Search" @click="loadData">搜索</el-button>
           <el-button :icon="Refresh" @click="resetQuery">重置</el-button>
@@ -80,6 +99,11 @@
           </template>
         </el-table-column>
         <el-table-column prop="examTime" label="考试时间" width="120" align="center" />
+        <el-table-column prop="scoreStatus" label="状态" width="90" align="center">
+          <template #default="{ row }">
+            <el-tag :type="statusTagType(row.scoreStatus)">{{ statusText(row.scoreStatus) }}</el-tag>
+          </template>
+        </el-table-column>
         <el-table-column label="操作" width="180" align="center" fixed="right">
           <template #default="{ row }">
             <el-button type="primary" link :icon="Edit" @click="handleEdit(row)">编辑</el-button>
@@ -103,7 +127,15 @@
     <el-dialog v-model="dialogVisible" :title="dialogTitle" width="500px" @close="handleDialogClose">
       <el-form ref="formRef" :model="form" :rules="rules" label-width="80px">
         <el-form-item label="学生" prop="studentId">
-          <el-select v-model="form.studentId" placeholder="请选择学生" filterable style="width: 100%;">
+          <el-select
+            v-model="form.studentId"
+            placeholder="输入姓名/学号搜索"
+            filterable
+            remote
+            :remote-method="searchStudents"
+            :loading="studentSearchLoading"
+            style="width: 100%;"
+          >
             <el-option
               v-for="item in studentList"
               :key="item.id"
@@ -146,6 +178,7 @@ import { getScorePage, addScore, updateScore, deleteScore, getScoreStats, export
 import { getCourseList } from '@/api/course'
 import { getClazzList } from '@/api/clazz'
 import { getStudentPage } from '@/api/student'
+import { listTerms } from '@/api/education'
 
 const loading = ref(false)
 const submitLoading = ref(false)
@@ -156,6 +189,7 @@ const tableData = ref([])
 const total = ref(0)
 const courseList = ref([])
 const clazzList = ref([])
+const termList = ref([])
 const studentList = ref([])
 const isEdit = ref(false)
 const userStore = useUserStore()
@@ -172,7 +206,9 @@ const queryForm = reactive({
   size: 10,
   studentName: '',
   courseId: null,
-  clazzId: null
+  clazzId: null,
+  termId: null,
+  scoreStatus: null
 })
 
 const form = reactive({
@@ -195,10 +231,26 @@ function getScoreTagType(score) {
   return 'danger'
 }
 
+const STATUS_MAP = {
+  DRAFT: { text: '草稿', type: 'info' },
+  PENDING: { text: '待审核', type: 'warning' },
+  APPROVED: { text: '已审核', type: 'success' },
+  REJECTED: { text: '已驳回', type: 'danger' },
+  VOID: { text: '已作废', type: 'info' }
+}
+
+function statusText(status) {
+  return STATUS_MAP[status]?.text || '未知'
+}
+
+function statusTagType(status) {
+  return STATUS_MAP[status]?.type || 'info'
+}
+
 onMounted(() => {
   loadCourseList()
   loadClazzList()
-  loadStudentList()
+  loadTermList()
   loadData()
   loadStats()
 })
@@ -221,12 +273,31 @@ async function loadClazzList() {
   }
 }
 
-async function loadStudentList() {
+async function loadTermList() {
   try {
-    const res = await getStudentPage({ current: 1, size: 100 })
+    const res = await listTerms()
+    termList.value = res.data || []
+  } catch (e) {
+    console.error(e)
+  }
+}
+
+const studentSearchLoading = ref(false)
+
+// 远程搜索学生（姓名/学号模糊），避免全量拉取
+async function searchStudents(query) {
+  if (!query || !query.trim()) {
+    studentList.value = []
+    return
+  }
+  studentSearchLoading.value = true
+  try {
+    const res = await getStudentPage({ current: 1, size: 20, name: query.trim() })
     studentList.value = res.data?.records || []
   } catch (e) {
     console.error(e)
+  } finally {
+    studentSearchLoading.value = false
   }
 }
 
@@ -243,7 +314,7 @@ async function loadData() {
 
 async function loadStats() {
   try {
-    const res = await getScoreStats({ courseId: queryForm.courseId, clazzId: queryForm.clazzId })
+    const res = await getScoreStats({ courseId: queryForm.courseId, clazzId: queryForm.clazzId, termId: queryForm.termId })
     if (res.data) {
       stats.avg = res.data.avg || 0
       stats.max = res.data.max || 0
@@ -259,6 +330,8 @@ function resetQuery() {
   queryForm.studentName = ''
   queryForm.courseId = null
   queryForm.clazzId = null
+  queryForm.termId = null
+  queryForm.scoreStatus = null
   queryForm.current = 1
   loadData()
   loadStats()

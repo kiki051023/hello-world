@@ -51,8 +51,11 @@ public class ScoreController {
             @Valid @ModelAttribute PageQuery pageQuery,
             @RequestParam(required = false) Long studentId,
             @RequestParam(required = false) Long courseId,
-            @RequestParam(required = false) Long clazzId) {
-        IPage<Score> page = scoreService.getScorePage(pageQuery.getCurrent(), pageQuery.getSize(), studentId, courseId, clazzId);
+            @RequestParam(required = false) Long clazzId,
+            @RequestParam(required = false) Long termId,
+            @RequestParam(required = false) String studentName,
+            @RequestParam(required = false) String scoreStatus) {
+        IPage<Score> page = scoreService.getScorePage(pageQuery.getCurrent(), pageQuery.getSize(), studentId, courseId, clazzId, termId, studentName, scoreStatus);
         return Result.success(PageResult.of(page.getTotal(), page.getRecords().stream().map(ApiDtoMapper::score).toList(), page.getCurrent(), page.getSize()));
     }
 
@@ -93,8 +96,9 @@ public class ScoreController {
     @GetMapping("/stats")
     public Result<Map<String, BigDecimal>> getScoreStats(
             @RequestParam(required = false) Long courseId,
-            @RequestParam(required = false) Long clazzId) {
-        return Result.success(scoreService.getScoreStats(courseId, clazzId));
+            @RequestParam(required = false) Long clazzId,
+            @RequestParam(required = false) Long termId) {
+        return Result.success(scoreService.getScoreStats(courseId, clazzId, termId));
     }
 
     @Operation(summary = "导出成绩(Excel)；超10,000行转异步任务")
@@ -103,14 +107,15 @@ public class ScoreController {
     public Object exportScores(HttpServletResponse response,
                              @RequestParam(required = false) Long studentId,
                              @RequestParam(required = false) Long courseId,
-                             @RequestParam(required = false) Long clazzId) throws IOException {
-        long total = scoreService.countForExport(studentId, courseId, clazzId);
+                             @RequestParam(required = false) Long clazzId,
+                             @RequestParam(required = false) Long termId) throws IOException {
+        long total = scoreService.countForExport(studentId, courseId, clazzId, termId);
         if (total > com.example.student.common.ImportLimits.MAX_EXPORT_ROWS) {
             // 超阈值：转异步任务
-            String params = "studentId=" + studentId + ",courseId=" + courseId + ",clazzId=" + clazzId;
+            String params = "studentId=" + studentId + ",courseId=" + courseId + ",clazzId=" + clazzId + ",termId=" + termId;
             com.example.student.common.ExportTask task = asyncExportService.submit(
                     "SCORE", params,
-                    () -> scoreService.exportScores(studentId, courseId, clazzId).size());
+                    () -> scoreService.exportScores(studentId, courseId, clazzId, termId).size());
             Map<String, Object> result = new HashMap<>();
             result.put("async", true);
             result.put("taskNo", task.getTaskNo());
@@ -122,7 +127,7 @@ public class ScoreController {
         String fileName = URLEncoder.encode("成绩信息", "UTF-8").replaceAll("\\+", "%20");
         response.setHeader("Content-disposition", "attachment;filename*=utf-8''" + fileName + ".xlsx");
         EasyExcel.write(response.getOutputStream(), ScoreExcel.class)
-                .sheet("成绩信息").doWrite(scoreService.exportScores(studentId, courseId, clazzId));
+                .sheet("成绩信息").doWrite(scoreService.exportScores(studentId, courseId, clazzId, termId));
         return null;
     }
 

@@ -25,6 +25,12 @@ class StatisticsServiceScopeTest {
         StatisticsServiceImpl service = new StatisticsServiceImpl();
         ReflectionTestUtils.setField(service, "scoreMapper", mapper);
         ReflectionTestUtils.setField(service, "studentDataScopeService", scope);
+        com.example.student.common.DistributedCacheService distributedCache =
+                mock(com.example.student.common.DistributedCacheService.class);
+        when(distributedCache.getOrLoad(any(), anyLong(), any()))
+                .thenAnswer(inv -> ((java.util.function.Function<String, ?>) inv.getArgument(2))
+                        .apply(inv.getArgument(0)));
+        ReflectionTestUtils.setField(service, "distributedCache", distributedCache);
 
         service.getStudentRadar(99L);
 

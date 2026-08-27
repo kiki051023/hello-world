@@ -12,7 +12,7 @@ public interface StatisticsService {
     Map<String, Object> getOverview();
 
     /** 成绩深度分析：分段分布、班级平均分、课程及格率、课程平均分、Top学生、趋势、及格/不及格 */
-    Map<String, Object> getScoreAnalysis();
+    Map<String, Object> getScoreAnalysis(Long clazzId, Long courseId, Long termId);
 
     /** 单个学生的各课程成绩（雷达图） */
     Map<String, Object> getStudentRadar(Long studentId);
