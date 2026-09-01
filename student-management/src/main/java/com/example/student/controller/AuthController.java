@@ -1,5 +1,6 @@
 package com.example.student.controller;
 
+import com.example.student.audit.RateLimit;
 import com.example.student.common.Result;
 import com.example.student.dto.ChangePasswordDTO;
 import com.example.student.dto.ForceChangePasswordDTO;
@@ -46,12 +47,16 @@ public class AuthController {
 
     @Operation(summary = "获取登录验证码")
     @GetMapping("/captcha")
+    @RateLimit(bucket = "auth:captcha", limit = 10, message = "验证码获取过于频繁，请稍后再试")
     public Result<Map<String, String>> captcha() {
         return Result.success(captchaService.generate());
     }
 
     @Operation(summary = "登录")
     @PostMapping("/login")
+    @RateLimit(bucket = "auth:login:ip", limit = 10, message = "登录过于频繁，请稍后再试")
+    @RateLimit(bucket = "auth:login:user", key = "#loginDTO.username", limit = 5,
+            message = "该账号登录尝试过多，请稍后再试")
     public Result<Map<String, Object>> login(@Valid @RequestBody LoginDTO loginDTO) {
         // 验证码校验（一次性）：失败直接拒绝，不消耗登录失败计数
         if (!captchaService.validate(loginDTO.getCaptchaKey(), loginDTO.getCaptchaCode())) {

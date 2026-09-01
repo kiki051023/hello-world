@@ -2,6 +2,7 @@ package com.example.student.controller;
 
 import com.alibaba.excel.EasyExcel;
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.example.student.audit.RateLimit;
 import com.example.student.common.ImportResult;
 import com.example.student.common.PageResult;
 import com.example.student.common.PageQuery;
@@ -125,6 +126,7 @@ public class StudentController {
     @Operation(summary = "导入学生(Excel)")
     @PreAuthorize("hasAnyRole('ADMIN','EDUCATION_ADMIN','DEPARTMENT_LEADER','COUNSELOR','TEACHER','PRACTICE_TEACHER')")
     @PostMapping("/import")
+    @RateLimit(bucket = "import:student", limit = 2, message = "导入操作过于频繁，请稍后再试")
     public Result<ImportResult<StudentExcel>> importStudents(@RequestParam("file") MultipartFile file) {
         if (file == null || file.isEmpty()) {
             throw new BusinessException("文件不能为空");
