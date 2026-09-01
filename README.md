@@ -19,7 +19,7 @@
 
 ## 项目简介
 
-学生管理系统是一个全栈 Web 应用，实现了学生信息、班级、课程、成绩、教师等核心业务的全生命周期管理。系统采用前后端分离架构，后端基于 Spring Boot 3 + MyBatis-Plus，前端基于 Vue 3 + Element Plus，支持 JWT 身份认证和多角色权限控制。
+学生管理系统是一个全栈 Web 应用，实现了学生信息、班级、课程、成绩、教师等核心业务的全生命周期管理，并扩展至教务、学工、实习就业、组织架构等院校全场景。系统采用前后端分离架构，后端基于 Spring Boot 3 + MyBatis-Plus，前端基于 Vue 3 + Element Plus，支持 JWT 认证（访问令牌 + 刷新令牌 + 黑名单 + 在线会话）、RBAC 多角色权限与数据权限（按学校/系部/班级隔离）。
 
 ## 技术栈
 
@@ -51,40 +51,47 @@
 ## 功能模块
 
 ### 🔐 认证与权限
-- 用户登录 / 登出
-- JWT Token 认证
-- 角色权限（管理员 / 教师 / 学生）
+- 登录 / 登出 / 刷新令牌（JWT 访问+刷新双令牌，黑名单即时吊销）
+- 验证码（图片验证码）+ 登录失败锁定 + 密码强度策略 + 首次登录强制改密
+- RBAC 多角色（管理员 / 教师 / 学生 / 教务管理员 / 辅导员等）+ 用户与角色管理
+- 数据权限：按学校 / 系部 / 班级隔离数据，学生端仅见本人
+- 在线用户管理：在线会话列表 + 强制下线
 
-### 👨‍🎓 学生管理
-- 学生信息增删改查
-- 按姓名、学号、班级筛选
-- 分页查询
-- 班级关联显示
+### 👨‍🎓 基础数据管理
+- 学生信息增删改查（按姓名、学号、班级筛选，分页，Excel 导入导出）
+- 班级 / 课程 / 教师管理
+- 组织架构三级树：学校 → 系部 → 专业（删除保护）
 
-### 🏫 班级管理
-- 班级信息增删改查
-- 班级名称、年级、班主任管理
-- 分页查询
-
-### 📚 课程管理
-- 课程信息增删改查
-- 课程编号、名称、学分、授课教师管理
-- 分页查询
+### 🎓 教务中心
+- 学期管理：新增/编辑/设为当前学期
+- 课程开设（学期维度）+ 授课任务分配 + 学生选课
+- 培养方案管理
 
 ### 📊 成绩管理
-- 成绩录入、修改、删除
-- 按学生、课程、班级筛选
-- 成绩统计（平均分、最高分、最低分、及格率）
-- 分数等级颜色标签
-- 分页查询
+- 成绩录入、审核（草稿→提交→审核/退回）、作废（含变更日志全链路）
+- 按学生、课程、班级、学期筛选；统计（平均/最高/最低/及格率）
+- 成绩分析：班级对比、个人趋势、下钻、四 Tab 视图（ECharts）
 
-### 👨‍🏫 教师管理
-- 教师信息增删改查
-- 工号、姓名、性别、电话管理
+### 🏫 学工中心
+- 请假申请与审批、资助申请与审批（敏感信息脱敏）
+- 奖惩管理、学籍异动管理
+- 学业预警：按规则引擎生成（挂科数等），预警处理与通知
+
+### 💼 实习就业
+- 实习计划 / 岗位 / 分配 / 日志 / 评价 / 证书
+- 就业记录管理
+
+### 🔔 通知中心
+- 站内通知 + 待办红点（30s 轮询）
+- 业务触发点：请假审批 / 成绩审核 / 资助审批 / 学业预警 / 实习分配
 
 ### 🏠 首页看板
-- 学生/班级/课程/教师总数统计
-- 欢迎信息与功能导航
+- 学生/班级/课程/教师总数统计 + 成绩分布 / 班级均分图 + 快捷入口
+
+### ⚙️ 系统管理
+- 用户管理、角色管理、数据权限分配、密码重置
+- 操作审计日志（traceId 全链路贯通）、异步导入任务、健康检查
+- 平台能力：定时任务调度（预警扫描/学期切换/通知清理/导入回收）、接口限流、OpenAPI v1 外部接口
 
 ## 项目结构
 
@@ -93,30 +100,34 @@ student-management-system/
 ├── student-management/          # 后端（Spring Boot）
 │   ├── src/main/java/com/example/student/
 │   │   ├── StudentApplication.java   # 启动类
-│   │   ├── common/                   # 公共组件 (Result, PageResult)
-│   │   ├── config/                   # 配置类
-│   │   ├── controller/               # 控制层 (7个Controller)
-│   │   ├── entity/                   # 实体类 (6个实体)
-│   │   ├── mapper/                   # 持久层 (6个Mapper)
+│   │   ├── common/                   # 公共组件 (Result, PageResult, DistributedCacheService)
+│   │   ├── config/                   # 配置类（含 ScheduledTaskScheduler 动态定时任务）
+│   │   ├── controller/               # 控制层 (27个Controller)
+│   │   ├── entity/                   # 实体类 (37个实体)
+│   │   ├── mapper/                   # 持久层
 │   │   ├── service/                  # 业务层
 │   │   │   └── impl/                 # 业务实现类
-│   │   ├── security/                 # 安全层 (JWT过滤器)
+│   │   ├── security/                 # 安全层 (JWT过滤器/Redis令牌/数据权限/验证码)
+│   │   ├── audit/                    # 操作审计 + 接口限流切面
 │   │   ├── exception/                # 异常处理
 │   │   └── utils/                    # 工具类
 │   ├── src/main/resources/
 │   │   ├── application.yml           # 配置文件
 │   │   ├── mapper/                   # MyBatis XML
-│   │   └── sql/init.sql              # 数据库初始化脚本
+│   │   └── sql/
+│   │       ├── init.sql              # 数据库初始化脚本
+│   │       └── migrations/           # phase1~phase10 版本化迁移（各配套结构测试）
 │   └── pom.xml
 │
 └── student-frontend/              # 前端（Vue 3）
     ├── src/
-    │   ├── api/                      # API 接口 (6个模块)
-    │   ├── layout/                   # 布局组件
-    │   ├── router/                   # 路由配置
+    │   ├── api/                      # API 接口 (16个模块)
+    │   ├── layout/                   # 布局组件（暗色古典学院风）
+    │   ├── router/                   # 路由配置（懒加载）
     │   ├── store/                    # 状态管理 (Pinia)
+    │   ├── styles/                   # 全局主题 token（theme.css）
     │   ├── utils/                    # 工具类 (Axios封装)
-    │   ├── views/                    # 页面 (7个页面)
+    │   ├── views/                    # 页面（约40个视图：基础CRUD/教务/学工/实习/分析/系统）
     │   ├── App.vue
     │   └── main.js
     ├── index.html
@@ -205,18 +216,18 @@ npm run dev
 
 ## 数据库设计
 
-共 **6 张核心表**：
+核心业务表 + 教务 / 学工 / 实习 / 系统共 **37 张表**（实体 37 个），主要分组：
 
-| 表名 | 说明 | 关键字段 |
-|------|------|---------|
-| sys_user | 用户表 | username, password, role, status |
-| student | 学生表 | student_no, name, gender, clazz_id |
-| teacher | 教师表 | teacher_no, name, gender, phone |
-| clazz | 班级表 | clazz_name, grade, head_teacher_id |
-| course | 课程表 | course_no, course_name, credit, teacher_id |
-| score | 成绩表 | student_id, course_id, score, exam_time |
+| 分组 | 表 |
+|------|-----|
+| 基础 | sys_user, student, teacher, clazz, course, score |
+| 教务 | academic_term, course_term, teaching_task, course_selection, training_plan, training_plan_course |
+| 学工 | leave_request, hardship_funding, reward_punishment, student_status_history, student_warning |
+| 实习就业 | practice_plan, practice_position, practice_company, practice_assignment, practice_log, practice_evaluation, practice_certificate, employment_record, student_certificate |
+| 组织 | school, department, major |
+| 系统 | sys_role, sys_permission, sys_user_role, sys_role_permission, sys_data_scope, operation_log, notification, import_task, export_task, scheduled_task, scheduled_task_log 等 |
 
-### ER 关系图
+### ER 关系图（核心）
 
 ```
 sys_user ─── 1:1 ─── student (student.user_id)
@@ -226,7 +237,10 @@ clazz ─── 1:N ─── student (student.clazz_id)
 teacher ─── 1:N ─── clazz (clazz.head_teacher_id)
 teacher ─── 1:N ─── course (course.teacher_id)
 
+school ─── 1:N ─── department ─── 1:N ─── major ─── 1:N ─── clazz
+
 student ─── N:M ─── course (通过 score 表)
+term ─── 1:N ─── course_term ─── 1:N ─── teaching_task / course_selection
 ```
 
 ## 默认账号
@@ -245,24 +259,23 @@ student ─── N:M ─── course (通过 score 表)
 - **文档地址**：`http://localhost:8080/doc.html`
 - **OpenAPI JSON**：`http://localhost:8080/v3/api-docs`
 
-### 主要 API 列表
+### 主要 API 列表（按模块，完整见 Knife4j）
 
-| 模块 | 接口 | 方法 | 说明 |
-|------|------|------|------|
-| 认证 | /api/auth/login | POST | 登录 |
-| 认证 | /api/auth/logout | POST | 登出 |
-| 学生 | /api/student/page | GET | 分页列表 |
-| 学生 | /api/student/{id} | GET | 详情 |
-| 学生 | /api/student | POST | 新增 |
-| 学生 | /api/student | PUT | 修改 |
-| 学生 | /api/student/{id} | DELETE | 删除 |
-| 班级 | /api/clazz/list | GET | 全部列表 |
-| 课程 | /api/course/list | GET | 全部列表 |
-| 成绩 | /api/score/page | GET | 分页列表 |
-| 成绩 | /api/score/stats | GET | 成绩统计 |
-| 教师 | /api/teacher/list | GET | 全部列表 |
+| 模块 | 前缀 | 说明 |
+|------|------|------|
+| 认证 | /api/auth | 登录、登出、刷新令牌、验证码、改密 |
+| 学生/班级/课程/教师 | /api/student, /api/clazz, /api/course, /api/teacher | CRUD + 分页 + Excel 导入导出 |
+| 成绩 | /api/score, /api/score-lifecycle | CRUD、统计、审核、作废、变更日志、导入导出 |
+| 教务 | /api/academic-term, /api/course-term, /api/teaching-task, /api/course-selection, /api/training-plan | 学期、课程开设、授课任务、选课、培养方案 |
+| 学工 | /api/leave, /api/funding, /api/reward-punishment, /api/student-status, /api/warning | 请假、资助、奖惩、学籍异动、预警 |
+| 实习就业 | /api/practice-assignment, /api/practice-log, /api/employment | 实习分配、日志、就业 |
+| 分析 | /api/statistics | 概览、成绩分布、班级均分、趋势 |
+| 组织架构 | /api/org | 学校/系部/专业三级树 |
+| 通知 | /api/notification | 分页、未读数、已读 |
+| 系统 | /api/system/* | 用户管理、角色、在线用户、健康检查、操作日志 |
+| 开放接口 | /api/v1/* | OpenAPI v1（X-Client-Id + 幂等键 + 限流） |
 
-> 共 31 个接口，详情请访问 Knife4j 文档。
+> 共 100+ 个接口，完整列表请访问 Knife4j 文档。
 
 ## 部署说明
 
