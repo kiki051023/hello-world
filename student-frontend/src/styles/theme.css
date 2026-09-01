@@ -98,6 +98,42 @@ body {
   background: #d8d2c2;
   border-radius: 4px;
 }
+/* 折叠过渡（侧栏宽度动画） */
+.sidebar {
+  transition: width 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ============ 响应式（UE-1，全局）：抽屉 + 筛选区 + 表格 ============ */
+/* el-drawer teleport 到 body，必须全局 */
+.nav-drawer .el-drawer__body {
+  padding: 0;
+}
+.nav-drawer .drawer-inner {
+  background: linear-gradient(180deg, #0e1116 0%, #141a24 100%);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+@media (max-width: 768px) {
+  /* 筛选表单：不再 inline 硬挤，自动换行 */
+  .el-form--inline {
+    flex-wrap: wrap;
+  }
+  .el-form--inline .el-form-item {
+    margin-right: 12px;
+  }
+  /* 内容区窄屏减 padding */
+  .main-content {
+    padding: 12px;
+  }
+}
+
+/* 表格容器：超宽横滚，避免整页溢出 */
+.el-table {
+  max-width: 100%;
+}
+
 ::-webkit-scrollbar-thumb:hover {
   background: #c9a227;
 }

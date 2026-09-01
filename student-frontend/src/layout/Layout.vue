@@ -1,6 +1,7 @@
 <template>
   <el-container class="layout-container">
-    <el-aside width="220px" class="sidebar">
+    <el-aside :width="isMobile ? '0px' : (isCollapsed ? '64px' : '220px')" class="sidebar"
+              :class="{ 'sidebar-collapsed': isCollapsed, 'sidebar-mobile': isMobile }">
       <div class="logo">
         <div class="logo-crest" aria-hidden="true">
           <svg viewBox="0 0 32 32" width="30" height="30" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -9,11 +10,13 @@
             <path d="M16 8 L22 19 L18.5 19 L18.5 22.5 L13.5 22.5 L13.5 19 L10 19 L16 8 Z" fill="#C9A227"/>
           </svg>
         </div>
-        <span class="logo-text">学生管理系统</span>
+        <span v-show="!isCollapsed" class="logo-text">学生管理系统</span>
       </div>
       <el-menu
         :default-active="activeMenu"
         :default-openeds="openGroups"
+        :collapse="isCollapsed"
+        :collapse-transition="false"
         router
         class="side-menu"
       >
@@ -36,9 +39,52 @@
       </el-menu>
     </el-aside>
 
+    <!-- 移动端抽屉导航 -->
+    <el-drawer v-model="drawerVisible" direction="ltr" size="240px" :with-header="false" class="nav-drawer">
+      <div class="drawer-inner">
+        <div class="logo">
+          <div class="logo-crest" aria-hidden="true">
+            <svg viewBox="0 0 32 32" width="30" height="30" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="16" cy="16" r="14" stroke="#C9A227" stroke-width="1.6" fill="none"/>
+              <circle cx="16" cy="16" r="11" stroke="#C9A227" stroke-width="0.6" fill="none" opacity="0.6"/>
+              <path d="M16 8 L22 19 L18.5 19 L18.5 22.5 L13.5 22.5 L13.5 19 L10 19 L16 8 Z" fill="#C9A227"/>
+            </svg>
+          </div>
+          <span class="logo-text">学生管理系统</span>
+        </div>
+        <el-menu
+          :default-active="activeMenu"
+          :default-openeds="openGroups"
+          router
+          class="side-menu"
+          @select="drawerVisible = false"
+        >
+          <template v-for="g in visibleGroups" :key="g.title">
+            <el-menu-item v-if="g.items.length === 1 && !g.alwaysSub" :index="g.items[0].index">
+              <el-icon><component :is="g.items[0].icon" /></el-icon>
+              <span>{{ g.items[0].title }}</span>
+            </el-menu-item>
+            <el-sub-menu v-else :index="g.title">
+              <template #title>
+                <el-icon><component :is="g.icon" /></el-icon>
+                <span>{{ g.title }}</span>
+              </template>
+              <el-menu-item v-for="m in g.items" :key="m.index" :index="m.index">
+                <span>{{ m.title }}</span>
+              </el-menu-item>
+            </el-sub-menu>
+          </template>
+        </el-menu>
+      </div>
+    </el-drawer>
+
     <el-container>
       <el-header class="header">
         <div class="header-left">
+          <!-- 汉堡按钮：桌面折叠/展开，移动端拉抽屉 -->
+          <button class="collapse-btn" type="button" aria-label="切换导航" @click="toggleSidebar">
+            <el-icon :size="18"><Expand v-if="isCollapsed || isMobile" /><Fold v-else /></el-icon>
+          </button>
           <el-breadcrumb separator="/" class="gold-breadcrumb">
             <el-breadcrumb-item :to="{ path: '/' }">首页</el-breadcrumb-item>
             <el-breadcrumb-item>{{ currentTitle }}</el-breadcrumb-item>
@@ -73,7 +119,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/store/user'
 import NotificationBell from '@/components/NotificationBell.vue'
@@ -91,7 +137,9 @@ import {
   Notebook,
   Suitcase,
   Monitor,
-  ArrowDown
+  ArrowDown,
+  Expand,
+  Fold
 } from '@element-plus/icons-vue'
 import { logout } from '@/api/auth'
 import ChangePasswordDrawer from '@/components/ChangePasswordDrawer.vue'
@@ -173,7 +221,34 @@ const openGroups = computed(() =>
 
 onMounted(() => {
   userStore.loadUserInfo()
+  // 移动端断点监听：<768px 隐藏侧栏（改用抽屉）
+  checkViewport()
+  window.addEventListener('resize', checkViewport)
 })
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', checkViewport)
+})
+
+// ============ 侧栏折叠 + 移动端抽屉（UE-1） ============
+const STORAGE_KEY = 'sidebar-collapsed'
+const isCollapsed = ref(localStorage.getItem(STORAGE_KEY) === '1')
+const isMobile = ref(false)
+const drawerVisible = ref(false)
+
+function checkViewport() {
+  isMobile.value = window.innerWidth < 768
+  if (isMobile.value) drawerVisible.value = false
+}
+
+function toggleSidebar() {
+  if (isMobile.value) {
+    drawerVisible.value = true
+  } else {
+    isCollapsed.value = !isCollapsed.value
+    localStorage.setItem(STORAGE_KEY, isCollapsed.value ? '1' : '0')
+  }
+}
 
 function handleCommand(command) {
   if (command === 'profile') {
@@ -196,9 +271,38 @@ function handleCommand(command) {
 </script>
 
 <style scoped>
+/* ============ 响应式布局（UE-1）：侧栏折叠 + 抽屉 + 筛选区/表格 ============ */
 .layout-container {
   height: 100vh;
 }
+
+/* 折叠按钮 */
+.collapse-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  color: #5a6B7e;
+  cursor: pointer;
+  margin-right: 12px;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+.collapse-btn:hover {
+  background: var(--parchment-200);
+  color: #c9a227;
+}
+
+/* 移动端隐藏侧栏，抽屉接管 */
+.sidebar-mobile {
+  display: none;
+}
+
+/* 折叠过渡 */
 
 /* ============ 侧栏：深墨藏蓝 + 金色 ============ */
 .sidebar {
