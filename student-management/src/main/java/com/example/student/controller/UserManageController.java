@@ -10,6 +10,7 @@ import com.example.student.dto.UserUpdateDTO;
 import com.example.student.entity.Role;
 import com.example.student.entity.User;
 import com.example.student.security.RoleManageDataScopeGuard;
+import com.example.student.security.RedisTokenService;
 import com.example.student.service.UserManageService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -33,10 +34,13 @@ public class UserManageController {
 
     private final UserManageService userManageService;
     private final RoleManageDataScopeGuard dataScopeGuard;
+    private final RedisTokenService redisTokenService;
 
-    public UserManageController(UserManageService userManageService, RoleManageDataScopeGuard dataScopeGuard) {
+    public UserManageController(UserManageService userManageService, RoleManageDataScopeGuard dataScopeGuard,
+                                RedisTokenService redisTokenService) {
         this.userManageService = userManageService;
         this.dataScopeGuard = dataScopeGuard;
+        this.redisTokenService = redisTokenService;
     }
 
     @Operation(summary = "用户分页")
@@ -113,5 +117,20 @@ public class UserManageController {
     @GetMapping("/{id}/roles")
     public Result<List<Role>> rolesOfUser(@PathVariable Long id) {
         return Result.success(userManageService.rolesOfUser(id));
+    }
+
+    @Operation(summary = "在线用户列表")
+    @GetMapping("/online")
+    public Result<List<Map<String, Object>>> onlineUsers() {
+        return Result.success(redisTokenService.listOnline());
+    }
+
+    @Operation(summary = "强制下线指定会话")
+    @PostMapping("/online/kick")
+    public Result<Void> kickOnline(@RequestParam Long userId, @RequestParam String jti) {
+        // 拉黑 TTL 用令牌剩余有效期估算，缺失时给默认 30 分钟
+        long ttl = 30 * 60;
+        redisTokenService.forceLogout(userId, jti, ttl);
+        return Result.success();
     }
 }

@@ -56,6 +56,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     new UsernamePasswordAuthenticationToken(username, null,
                             Collections.singletonList(authority));
             SecurityContextHolder.getContext().setAuthentication(authentication);
+            // M1-3 在线会话心跳：每次鉴权请求刷新 TTL（活跃窗口 30 分钟）
+            redisTokenService.touchOnline(userId, jti, username, null);
         }
         filterChain.doFilter(request, response);
     }

@@ -78,6 +78,8 @@ public class AuthController {
             Long userId = jwtUtils.getUserIdFromToken(token);
             if (userId != null) {
                 redisTokenService.removeRefreshToken(userId);
+                // M1-3 移除在线会话
+                redisTokenService.removeOnline(userId, jwtUtils.getJtiFromToken(token));
             }
         }
         return Result.success();
