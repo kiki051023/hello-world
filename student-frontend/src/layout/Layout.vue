@@ -178,6 +178,7 @@ const allMenus = [
   { index: '/system/roles', title: '角色管理', icon: Avatar, roles: ['ADMIN'] },
   { index: '/system/dict', title: '字典管理', icon: Collection, roles: ['ADMIN'] },
   { index: '/system/dorm', title: '宿舍管理', icon: House, roles: ['ADMIN'] },
+  { index: '/portal', title: '我的门户', icon: User, roles: ['STUDENT'] },
   { index: '/analysis', title: '成绩分析', icon: TrendCharts, roles: ['ADMIN', 'TEACHER', 'STUDENT'] },
   { index: '/teacher', title: '教师管理', icon: Avatar, roles: ['ADMIN'] }
 ]
@@ -189,7 +190,7 @@ const menuGroups = [
   {
     title: '总览',
     icon: HomeFilled,
-    items: ['/dashboard', '/analysis'].map((i) => byIndex[i])
+    items: ['/dashboard', '/portal', '/analysis'].map((i) => byIndex[i])
   },
   {
     title: '教务中心',

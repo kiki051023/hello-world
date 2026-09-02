@@ -66,6 +66,12 @@ const routes = [
               component: () => import('@/views/system/dorm/index.vue'),
               meta: { title: '宿舍管理', icon: 'House', roles: ['ADMIN'] }
             },
+            {
+              path: 'portal',
+              name: 'MyPortal',
+              component: () => import('@/views/portal/index.vue'),
+              meta: { title: '我的门户', icon: 'User', roles: ['STUDENT'] }
+            },
       {
         path: 'score-audit',
         name: 'ScoreAudit',
