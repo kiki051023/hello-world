@@ -8,14 +8,14 @@
       <el-table-column prop="studentId" label="学生ID" width="90" align="center" />
       <el-table-column prop="academicYear" label="学年" width="110" align="center" />
       <el-table-column label="类型" width="90" align="center">
-        <template #default="{ row }">{{ { GRANT: '助学金', SCHOLARSHIP: '奖学金', LOAN: '助学贷款', WAIVER: '减免' }[row.fundingType] || row.fundingType }}</template>
+        <template #default="{ row }">{{ fundingTypeLabel(row.fundingType) }}</template>
       </el-table-column>
       <el-table-column prop="amount" label="金额" width="100" align="center" />
       <el-table-column prop="difficultyLevel" label="困难等级" width="100" align="center" />
       <el-table-column label="状态" width="90" align="center">
         <template #default="{ row }">
           <el-tag :type="{ PENDING: 'warning', APPROVED: 'success', REJECTED: 'danger', DISBURSED: 'info' }[row.status]">
-            {{ { PENDING: '待审', APPROVED: '通过', REJECTED: '驳回', DISBURSED: '已发放' }[row.status] }}
+            {{ fundingStatusLabel(row.status) }}
           </el-tag>
         </template>
       </el-table-column>
@@ -39,10 +39,7 @@
       </el-form-item>
       <el-form-item label="类型">
         <el-select v-model="form.fundingType" style="width: 100%;">
-          <el-option label="助学金" value="GRANT" />
-          <el-option label="奖学金" value="SCHOLARSHIP" />
-          <el-option label="助学贷款" value="LOAN" />
-          <el-option label="减免" value="WAIVER" />
+          <el-option v-for="o in fundingTypeOptions" :key="o.value" :label="o.label" :value="o.value" />
         </el-select>
       </el-form-item>
       <el-form-item label="金额">
@@ -69,6 +66,17 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import { getFundingPage, addFunding, reviewFunding } from '@/api/affairs'
 import { useCanManage, useIsStudent } from '../composables'
+import { useDict } from '@/utils/dict'
+
+// M2-4：文案走字典 funding_type / funding_status
+const { loadDict, labelOf } = useDict()
+const fundingTypeOptions = ref([])
+const fundingTypeLabel = (v) => labelOf('funding_type', v)
+const fundingStatusLabel = (v) => labelOf('funding_status', v)
+onMounted(async () => {
+  fundingTypeOptions.value = await loadDict('funding_type')
+  loadDict('funding_status')
+})
 
 const canManage = useCanManage()
 const isStudent = useIsStudent()

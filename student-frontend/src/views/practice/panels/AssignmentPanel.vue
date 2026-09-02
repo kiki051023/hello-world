@@ -13,7 +13,7 @@
       <el-table-column label="状态" width="90" align="center">
         <template #default="{ row }">
           <el-tag :type="{ ACTIVE: 'success', FINISHED: 'info', CANCELLED: 'danger' }[row.status]">
-            {{ { ACTIVE: '进行中', FINISHED: '已结束', CANCELLED: '已取消' }[row.status] }}
+            {{ labelOf('assignment_status', row.status) }}
           </el-tag>
         </template>
       </el-table-column>
@@ -48,6 +48,11 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import { getAssignmentPage, assignPractice, finishPractice } from '@/api/practice'
 import { useCanAssign } from '../composables'
+import { useDict } from '@/utils/dict'
+
+// M2-4：文案走字典 assignment_status
+const { loadDict, labelOf } = useDict()
+loadDict('assignment_status')
 
 const canAssign = useCanAssign()
 

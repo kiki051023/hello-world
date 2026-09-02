@@ -40,6 +40,12 @@ SELECT t.dict_type, t.dict_name, t.remark FROM (
     UNION ALL SELECT 'employment_status','就业状态',    '毕业生就业去向'
     UNION ALL SELECT 'score_status',     '成绩状态',    '成绩审核生命周期'
     UNION ALL SELECT 'practice_log_status','实习日志状态','实习日志审核状态'
+    UNION ALL SELECT 'funding_status',   '资助审批状态','资助申请生命周期'
+    UNION ALL SELECT 'leave_status',     '请假状态',    '请假审批生命周期'
+    UNION ALL SELECT 'warning_type',     '预警类型',    '成绩/请假/违纪/资助'
+    UNION ALL SELECT 'warning_status',   '预警处理状态','预警处理生命周期'
+    UNION ALL SELECT 'assignment_status','实习分配状态','实习分配生命周期'
+    UNION ALL SELECT 'score_type',       '成绩类型',    '正常/补考/重修'
 ) t
 WHERE NOT EXISTS (SELECT 1 FROM sys_dict_type d WHERE d.dict_type = t.dict_type);
 
@@ -60,7 +66,8 @@ SELECT s.* FROM (
     UNION ALL SELECT 'leave_type', 'OTHER',    '其他', 4
     UNION ALL SELECT 'funding_type', 'GRANT',       '助学金', 1
     UNION ALL SELECT 'funding_type', 'SCHOLARSHIP', '奖学金', 2
-    UNION ALL SELECT 'funding_type', 'SUBSIDY',     '困难补助', 3
+    UNION ALL SELECT 'funding_type', 'LOAN',        '助学贷款', 3
+    UNION ALL SELECT 'funding_type', 'WAIVER',      '减免',   4
     UNION ALL SELECT 'warning_level', 'YELLOW', '黄色预警', 1
     UNION ALL SELECT 'warning_level', 'ORANGE', '橙色预警', 2
     UNION ALL SELECT 'warning_level', 'RED',    '红色预警', 3
@@ -76,6 +83,29 @@ SELECT s.* FROM (
     UNION ALL SELECT 'practice_log_status', 'DRAFT',     '草稿',   1
     UNION ALL SELECT 'practice_log_status', 'SUBMITTED', '已提交', 2
     UNION ALL SELECT 'practice_log_status', 'COMMENTED', '已点评', 3
+    UNION ALL SELECT 'funding_status', 'PENDING',   '待审',   1
+    UNION ALL SELECT 'funding_status', 'APPROVED',  '通过',   2
+    UNION ALL SELECT 'funding_status', 'REJECTED',  '驳回',   3
+    UNION ALL SELECT 'funding_status', 'DISBURSED', '已发放', 4
+    UNION ALL SELECT 'leave_status', 'PENDING',   '待审',   1
+    UNION ALL SELECT 'leave_status', 'APPROVED',  '已批',   2
+    UNION ALL SELECT 'leave_status', 'REJECTED',  '已驳',   3
+    UNION ALL SELECT 'leave_status', 'RETURNED',  '已销假', 4
+    UNION ALL SELECT 'leave_status', 'CANCELLED', '已取消', 5
+    UNION ALL SELECT 'leave_status', 'OVERDUE',   '超时',   6
+    UNION ALL SELECT 'warning_type', 'SCORE',   '成绩', 1
+    UNION ALL SELECT 'warning_type', 'LEAVE',   '请假', 2
+    UNION ALL SELECT 'warning_type', 'RP',      '违纪', 3
+    UNION ALL SELECT 'warning_type', 'FUNDING', '资助', 4
+    UNION ALL SELECT 'warning_status', 'ACTIVE',    '生效中', 1
+    UNION ALL SELECT 'warning_status', 'HANDLED',   '已处理', 2
+    UNION ALL SELECT 'warning_status', 'DISMISSED', '已驳回', 3
+    UNION ALL SELECT 'assignment_status', 'ACTIVE',    '进行中', 1
+    UNION ALL SELECT 'assignment_status', 'FINISHED',  '已结束', 2
+    UNION ALL SELECT 'assignment_status', 'CANCELLED', '已取消', 3
+    UNION ALL SELECT 'score_type', 'REGULAR', '正常', 1
+    UNION ALL SELECT 'score_type', 'MAKEUP',  '补考', 2
+    UNION ALL SELECT 'score_type', 'RETAKE',  '重修', 3
 ) s
 WHERE NOT EXISTS (
     SELECT 1 FROM sys_dict_data d WHERE d.dict_type = s.dict_type AND d.dict_value = s.dict_value

@@ -2,16 +2,14 @@
   <el-card shadow="never">
     <div class="toolbar">
       <el-select v-model="query.status" placeholder="状态" clearable style="width: 120px;" @change="load">
-        <el-option label="生效中" value="ACTIVE" />
-        <el-option label="已处理" value="HANDLED" />
-        <el-option label="已驳回" value="DISMISSED" />
+        <el-option v-for="o in warningStatusOptions" :key="o.value" :label="o.label" :value="o.value" />
       </el-select>
       <el-button v-if="canManage" type="warning" @click="doGenerate">扫描挂科预警(≥3门)</el-button>
     </div>
     <el-table :data="rows" v-loading="loading" border stripe>
       <el-table-column prop="studentId" label="学生ID" width="90" align="center" />
       <el-table-column label="预警类型" width="100" align="center">
-        <template #default="{ row }">{{ { SCORE: '成绩', LEAVE: '请假', RP: '违纪', FUNDING: '资助' }[row.warningType] }}</template>
+        <template #default="{ row }">{{ labelOf('warning_type', row.warningType) }}</template>
       </el-table-column>
       <el-table-column prop="ruleKey" label="规则" width="140" align="center" />
       <el-table-column label="触发值/阈值" width="120" align="center">
@@ -20,7 +18,7 @@
       <el-table-column label="状态" width="90" align="center">
         <template #default="{ row }">
           <el-tag :type="{ ACTIVE: 'danger', HANDLED: 'success', DISMISSED: 'info' }[row.status]">
-            {{ { ACTIVE: '生效中', HANDLED: '已处理', DISMISSED: '已驳回' }[row.status] }}
+            {{ labelOf('warning_status', row.status) }}
           </el-tag>
         </template>
       </el-table-column>
@@ -42,6 +40,11 @@ import { onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getWarningPage, generateScoreFailWarning, handleWarning } from '@/api/affairs'
 import { useCanManage } from '../composables'
+import { useDict } from '@/utils/dict'
+
+// M2-4：文案走字典 warning_type / warning_status
+const { loadDict, labelOf } = useDict()
+const warningStatusOptions = ref([])
 
 const canManage = useCanManage()
 
@@ -74,7 +77,11 @@ async function doHandle(row, dismiss) {
   load()
 }
 
-onMounted(load)
+onMounted(async () => {
+  loadDict('warning_type')
+  warningStatusOptions.value = await loadDict('warning_status')
+  load()
+})
 </script>
 
 <style scoped>

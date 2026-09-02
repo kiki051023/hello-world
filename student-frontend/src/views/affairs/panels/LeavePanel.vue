@@ -2,21 +2,21 @@
   <el-card shadow="never">
     <div class="toolbar">
       <el-select v-model="query.status" placeholder="状态" clearable style="width: 130px;" @change="load">
-        <el-option v-for="(t, k) in LEAVE_STATUS" :key="k" :label="t" :value="k" />
+        <el-option v-for="o in leaveStatusOptions" :key="o.value" :label="o.label" :value="o.value" />
       </el-select>
       <el-button type="primary" :icon="Plus" @click="openDialog">提交请假</el-button>
     </div>
     <el-table :data="rows" v-loading="loading" border stripe>
       <el-table-column prop="studentId" label="学生ID" width="90" align="center" />
       <el-table-column label="类型" width="80" align="center">
-        <template #default="{ row }">{{ { PERSONAL: '事假', SICK: '病假', OTHER: '其他' }[row.leaveType] || row.leaveType }}</template>
+        <template #default="{ row }">{{ leaveTypeLabel(row.leaveType) }}</template>
       </el-table-column>
       <el-table-column prop="startTime" label="开始" width="160" align="center" />
       <el-table-column prop="endTime" label="结束" width="160" align="center" />
       <el-table-column prop="reason" label="事由" min-width="130" show-overflow-tooltip />
       <el-table-column label="状态" width="90" align="center">
         <template #default="{ row }">
-          <el-tag :type="LEAVE_TAG[row.status] || 'info'">{{ LEAVE_STATUS[row.status] || row.status }}</el-tag>
+          <el-tag :type="LEAVE_TAG[row.status] || 'info'">{{ labelOf('leave_status', row.status) || row.status }}</el-tag>
         </template>
       </el-table-column>
       <el-table-column v-if="canManage" label="操作" width="200" align="center">
@@ -42,9 +42,7 @@
       </el-form-item>
       <el-form-item label="类型">
         <el-select v-model="form.leaveType" style="width: 100%;">
-          <el-option label="事假" value="PERSONAL" />
-          <el-option label="病假" value="SICK" />
-          <el-option label="其他" value="OTHER" />
+          <el-option v-for="o in leaveTypeOptions" :key="o.value" :label="o.label" :value="o.value" />
         </el-select>
       </el-form-item>
       <el-form-item label="起止时间">
@@ -70,11 +68,17 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import { getLeavePage, submitLeave, approveLeave, returnLeave } from '@/api/affairs'
 import { useCanManage, useIsStudent } from '../composables'
+import { useDict } from '@/utils/dict'
+
+// M2-4：文案走字典 leave_type / leave_status
+const { loadDict, labelOf } = useDict()
+const leaveTypeOptions = ref([])
+const leaveStatusOptions = ref([])
+const leaveTypeLabel = (v) => labelOf('leave_type', v)
 
 const canManage = useCanManage()
 const isStudent = useIsStudent()
 
-const LEAVE_STATUS = { PENDING: '待审', APPROVED: '已批', REJECTED: '已驳', RETURNED: '已销假', CANCELLED: '已取消', OVERDUE: '超时' }
 const LEAVE_TAG = { PENDING: 'warning', APPROVED: 'success', REJECTED: 'danger', RETURNED: 'info', OVERDUE: 'danger' }
 
 const saving = ref(false)
@@ -133,7 +137,11 @@ async function doReturn(row) {
   load()
 }
 
-onMounted(load)
+onMounted(async () => {
+  leaveTypeOptions.value = await loadDict('leave_type')
+  leaveStatusOptions.value = await loadDict('leave_status')
+  load()
+})
 </script>
 
 <style scoped>

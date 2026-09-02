@@ -17,7 +17,7 @@
         <el-table-column prop="score" label="分数" width="90" align="center" />
         <el-table-column label="类型" width="80" align="center">
           <template #default="{ row }">
-            {{ { REGULAR: '正常', MAKEUP: '补考', RETAKE: '重修' }[row.scoreType] || row.scoreType }}
+            {{ labelOf('score_type', row.scoreType) || row.scoreType }}
           </template>
         </el-table-column>
         <el-table-column label="状态" width="90" align="center">
@@ -206,6 +206,7 @@ async function showHistory(row) {
 
 onMounted(async () => {
   scoreStatusOptions.value = await loadDict('score_status')
+  loadDict('score_type')
   loadData()
 })
 </script>
