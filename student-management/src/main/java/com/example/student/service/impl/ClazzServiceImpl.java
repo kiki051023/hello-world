@@ -37,6 +37,16 @@ public class ClazzServiceImpl extends ServiceImpl<ClazzMapper, Clazz> implements
     @Autowired
     private DataScopeService dataScopeService;
 
+    @Autowired
+    private com.example.student.common.DistributedCacheService cache;
+
+    private static final String CLAZZ_LIST_CACHE = "clazz:list:";
+    private static final long CLAZZ_CACHE_TTL = 300;
+
+    private void evictClazzListCache() {
+        cache.evictByPrefix(CLAZZ_LIST_CACHE);
+    }
+
     @Override
     public IPage<Clazz> getClazzPage(Long current, Long size, String clazzName, String grade) {
         Page<Clazz> page = new Page<>(current, size);
@@ -49,6 +59,7 @@ public class ClazzServiceImpl extends ServiceImpl<ClazzMapper, Clazz> implements
         if (!scope.isUnrestricted() && scope.getDepartmentId() == null) throw new org.springframework.security.access.AccessDeniedException("无权新增班级");
         if (!scope.isUnrestricted() && clazz.getDepartmentId() == null) clazz.setDepartmentId(scope.getDepartmentId());
         baseMapper.insert(clazz);
+        evictClazzListCache();
     }
 
     @Override
@@ -56,6 +67,7 @@ public class ClazzServiceImpl extends ServiceImpl<ClazzMapper, Clazz> implements
         Clazz existing = baseMapper.selectById(clazz.getId());
         if (existing == null || !dataScopeService.canAccessClazz(existing)) throw new org.springframework.security.access.AccessDeniedException("无权修改该班级");
         baseMapper.updateById(clazz);
+        evictClazzListCache();
     }
 
     @Override
@@ -63,12 +75,20 @@ public class ClazzServiceImpl extends ServiceImpl<ClazzMapper, Clazz> implements
         Clazz existing = baseMapper.selectById(id);
         if (existing == null || !dataScopeService.canAccessClazz(existing)) throw new org.springframework.security.access.AccessDeniedException("无权删除该班级");
         baseMapper.deleteById(id);
+        evictClazzListCache();
     }
 
     @Override
     public List<Clazz> getAllClazz() {
-        // SQL 级数据范围过滤，替代 selectList(null)+内存过滤
-        return baseMapper.selectScoped(currentScope());
+        // SQL 级数据范围过滤；按 scope 摘要缓存 5 分钟（M2-2）
+        DataScopeFilter scope = currentScope();
+        String key = CLAZZ_LIST_CACHE + (scope == null ? "null"
+                : "u=" + scope.getUserId() + "|all=" + scope.isUnrestricted()
+                + "|self=" + scope.isSelfOnly() + "|d=" + scope.getDepartmentId()
+                + (scope.hasClassIds() ? "|c=" + scope.getClassIds().stream().sorted().toList() : ""));
+        Object cached = cache.getOrLoad(key, CLAZZ_CACHE_TTL, k -> baseMapper.selectScoped(scope));
+        // ponytail: Redis 往返实体→Map，ClazzDTO 映射只读标量字段，结构同构
+        return (List<Clazz>) cached;
     }
 
     @Override

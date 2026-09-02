@@ -44,6 +44,17 @@ public class OrgController {
     @Autowired
     private MajorService majorService;
 
+    @Autowired
+    private com.example.student.common.DistributedCacheService cache;
+
+    /** 组织树缓存（M2-2）：全局一棵（仅启用项，无 scope 维度），任何学校/系/专业写操作后失效 */
+    private static final String ORG_TREE_CACHE = "org:tree";
+    private static final long ORG_TREE_TTL = 300;
+
+    private void evictOrgTree() {
+        cache.evictByPrefix(ORG_TREE_CACHE);
+    }
+
     // ========== 学校 ==========
 
     @Operation(summary = "学校分页")
@@ -69,6 +80,7 @@ public class OrgController {
     @PostMapping("/school")
     public Result<Void> addSchool(@RequestBody SchoolDTO dto) {
         schoolService.addSchool(ApiDtoMapper.school(dto));
+        evictOrgTree();
         return Result.success();
     }
 
@@ -77,6 +89,7 @@ public class OrgController {
     @PutMapping("/school")
     public Result<Void> updateSchool(@RequestBody SchoolDTO dto) {
         schoolService.updateSchool(ApiDtoMapper.school(dto));
+        evictOrgTree();
         return Result.success();
     }
 
@@ -85,6 +98,7 @@ public class OrgController {
     @DeleteMapping("/school/{id}")
     public Result<Void> deleteSchool(@PathVariable Long id) {
         schoolService.deleteSchool(id);
+        evictOrgTree();
         return Result.success();
     }
 
@@ -116,6 +130,7 @@ public class OrgController {
     @PostMapping("/department")
     public Result<Void> addDepartment(@RequestBody DepartmentDTO dto) {
         departmentService.addDepartment(ApiDtoMapper.department(dto));
+        evictOrgTree();
         return Result.success();
     }
 
@@ -124,6 +139,7 @@ public class OrgController {
     @PutMapping("/department")
     public Result<Void> updateDepartment(@RequestBody DepartmentDTO dto) {
         departmentService.updateDepartment(ApiDtoMapper.department(dto));
+        evictOrgTree();
         return Result.success();
     }
 
@@ -132,6 +148,7 @@ public class OrgController {
     @DeleteMapping("/department/{id}")
     public Result<Void> deleteDepartment(@PathVariable Long id) {
         departmentService.deleteDepartment(id);
+        evictOrgTree();
         return Result.success();
     }
 
@@ -163,6 +180,7 @@ public class OrgController {
     @PostMapping("/major")
     public Result<Void> addMajor(@RequestBody MajorDTO dto) {
         majorService.addMajor(ApiDtoMapper.major(dto));
+        evictOrgTree();
         return Result.success();
     }
 
@@ -171,6 +189,7 @@ public class OrgController {
     @PutMapping("/major")
     public Result<Void> updateMajor(@RequestBody MajorDTO dto) {
         majorService.updateMajor(ApiDtoMapper.major(dto));
+        evictOrgTree();
         return Result.success();
     }
 
@@ -179,6 +198,7 @@ public class OrgController {
     @DeleteMapping("/major/{id}")
     public Result<Void> deleteMajor(@PathVariable Long id) {
         majorService.deleteMajor(id);
+        evictOrgTree();
         return Result.success();
     }
 
@@ -189,6 +209,11 @@ public class OrgController {
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/tree")
     public Result<List<Map<String, Object>>> tree() {
+        Object cached = cache.getOrLoad(ORG_TREE_CACHE, ORG_TREE_TTL, k -> buildTree());
+        return Result.success((List<Map<String, Object>>) cached);
+    }
+
+    private List<Map<String, Object>> buildTree() {
         List<School> schools = schoolService.getEnabledSchools();
         List<Department> departments = departmentService.getEnabledDepartments(null);
         List<Major> majors = majorService.getEnabledMajors(null);
@@ -237,6 +262,6 @@ public class OrgController {
             schoolNode.put("children", deptNodes);
             result.add(schoolNode);
         }
-        return Result.success(result);
+        return result;
     }
 }
