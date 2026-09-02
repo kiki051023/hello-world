@@ -140,7 +140,8 @@ import {
   ArrowDown,
   Expand,
   Fold,
-  Collection
+  Collection,
+  House
 } from '@element-plus/icons-vue'
 import { logout } from '@/api/auth'
 import ChangePasswordDrawer from '@/components/ChangePasswordDrawer.vue'
@@ -176,6 +177,7 @@ const allMenus = [
   { index: '/system/users', title: '用户管理', icon: User, roles: ['ADMIN'] },
   { index: '/system/roles', title: '角色管理', icon: Avatar, roles: ['ADMIN'] },
   { index: '/system/dict', title: '字典管理', icon: Collection, roles: ['ADMIN'] },
+  { index: '/system/dorm', title: '宿舍管理', icon: House, roles: ['ADMIN'] },
   { index: '/analysis', title: '成绩分析', icon: TrendCharts, roles: ['ADMIN', 'TEACHER', 'STUDENT'] },
   { index: '/teacher', title: '教师管理', icon: Avatar, roles: ['ADMIN'] }
 ]
@@ -202,7 +204,7 @@ const menuGroups = [
   {
     title: '系统',
     icon: Monitor,
-    items: ['/ops', '/system/org', '/system/users', '/system/roles', '/system/dict'].map((i) => byIndex[i]),
+    items: ['/ops', '/system/org', '/system/users', '/system/roles', '/system/dict', '/system/dorm'].map((i) => byIndex[i]),
     alwaysSub: true
   }
 ]

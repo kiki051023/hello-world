@@ -60,6 +60,12 @@ const routes = [
               component: () => import('@/views/system/dictmanage/index.vue'),
               meta: { title: '字典管理', icon: 'Collection', roles: ['ADMIN'] }
             },
+            {
+              path: 'system/dorm',
+              name: 'DormManage',
+              component: () => import('@/views/system/dorm/index.vue'),
+              meta: { title: '宿舍管理', icon: 'House', roles: ['ADMIN'] }
+            },
       {
         path: 'score-audit',
         name: 'ScoreAudit',
