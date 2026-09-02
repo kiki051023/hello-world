@@ -5,6 +5,11 @@
         <el-input v-model="keyword" :placeholder="config.keywordPlaceholder || '关键字'" clearable
                   style="width: 220px" @change="load" />
         <el-button type="primary" :icon="Plus" @click="openForm()">新增</el-button>
+        <el-button v-if="api.exportData" :icon="Download" @click="handleExport">导出</el-button>
+        <el-upload v-if="api.importData" :show-file-list="false" accept=".xlsx,.xls"
+                   :auto-upload="false" :on-change="handleImport" style="display:inline-block">
+          <el-button type="warning" :icon="Upload">导入</el-button>
+        </el-upload>
       </div>
     </el-card>
     <el-card shadow="never">
@@ -45,7 +50,7 @@
  */
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus } from '@element-plus/icons-vue'
+import { Plus, Download, Upload } from '@element-plus/icons-vue'
 
 const props = defineProps({
   config: { type: Object, required: true },
@@ -88,6 +93,46 @@ async function remove(row) {
   await ElMessageBox.confirm('确认删除该记录？', '提示', { type: 'warning' })
   await props.api.remove(row.id)
   ElMessage.success('已删除')
+  load()
+}
+
+// ---------- 导入导出（可选：api.exportData / api.importData / api.exportImportFail） ----------
+
+function downloadBlob(data, filename) {
+  const url = URL.createObjectURL(new Blob([data]))
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+}
+
+async function handleExport() {
+  const res = await props.api.exportData({ keyword: keyword.value || undefined })
+  downloadBlob(res.data, `${props.config.title}.xlsx`)
+  ElMessage.success('导出成功')
+}
+
+async function handleImport(file) {
+  if (!file.raw) return
+  const fd = new FormData()
+  fd.append('file', file.raw)
+  const res = await props.api.importData(fd)
+  const d = res.data || {}
+  const failRows = d.failRows || []
+  if (failRows.length && props.api.exportImportFail) {
+    ElMessageBox.confirm(
+      `成功导入 ${d.successCount || 0} 条，失败 ${failRows.length} 条。是否下载错误明细？`,
+      '导入完成', { confirmButtonText: '下载错误明细', cancelButtonText: '关闭', type: 'warning' }
+    ).then(async () => {
+      const resp = await props.api.exportImportFail(failRows)
+      downloadBlob(resp.data, `${props.config.title}导入失败明细.xlsx`)
+    }).catch(() => {})
+  } else {
+    ElMessage.success(`导入成功，共 ${d.successCount || 0} 条`)
+  }
   load()
 }
 
