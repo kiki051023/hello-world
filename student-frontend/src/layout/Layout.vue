@@ -91,6 +91,9 @@
           </el-breadcrumb>
         </div>
         <div class="header-right">
+          <!-- M3-3 全局搜索：Ctrl+K / 点击输入框 -->
+          <el-input class="global-search" placeholder="搜索页面 (Ctrl+K)" readonly :prefix-icon="Search"
+                    @click="searchVisible = true" />
           <NotificationBell />
           <el-dropdown @command="handleCommand">
             <span class="user-info">
@@ -115,6 +118,19 @@
 
     <!-- 个人信息 → 修改密码抽屉 -->
     <ChangePasswordDrawer ref="changePwdDrawerRef" />
+
+    <!-- M3-3 全局搜索命令面板 -->
+    <el-dialog v-model="searchVisible" :show-close="false" width="440px" class="search-dialog"
+               @opened="searchInputRef?.focus()">
+      <el-input ref="searchInputRef" v-model="searchText" placeholder="输入页面名…" :prefix-icon="Search" />
+      <div class="search-results">
+        <div v-for="m in searchResults" :key="m.index" class="search-item" @click="goSearch(m)">
+          <el-icon><component :is="m.icon" /></el-icon>
+          <span>{{ m.title }}</span>
+        </div>
+        <el-empty v-if="searchText && !searchResults.length" description="无匹配页面" :image-size="50" />
+      </div>
+    </el-dialog>
   </el-container>
 </template>
 
@@ -141,7 +157,8 @@ import {
   Expand,
   Fold,
   Collection,
-  House
+  House,
+  Search
 } from '@element-plus/icons-vue'
 import { logout } from '@/api/auth'
 import ChangePasswordDrawer from '@/components/ChangePasswordDrawer.vue'
@@ -224,15 +241,42 @@ const openGroups = computed(() =>
     .map((g) => g.title)
 )
 
+// ============ M3-3 全局搜索（Ctrl+K） ============
+const searchVisible = ref(false)
+const searchText = ref('')
+const searchInputRef = ref(null)
+
+const searchResults = computed(() => {
+  const q = searchText.value.trim()
+  const mine = allMenus.filter((m) => m.roles.includes(userStore.role))
+  if (!q) return mine
+  return mine.filter((m) => m.title.includes(q))
+})
+
+function goSearch(m) {
+  searchVisible.value = false
+  searchText.value = ''
+  router.push(m.index)
+}
+
+function onGlobalKey(e) {
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+    e.preventDefault()
+    searchVisible.value = true
+  }
+}
+
 onMounted(() => {
   userStore.loadUserInfo()
   // 移动端断点监听：<768px 隐藏侧栏（改用抽屉）
   checkViewport()
   window.addEventListener('resize', checkViewport)
+  window.addEventListener('keydown', onGlobalKey)
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener('resize', checkViewport)
+  window.removeEventListener('keydown', onGlobalKey)
 })
 
 // ============ 侧栏折叠 + 移动端抽屉（UE-1） ============
@@ -484,4 +528,15 @@ function handleCommand(command) {
     font-size: 15px;
   }
 }
+
+/* M3-3 全局搜索 */
+.global-search { width: 180px; margin-right: 12px; cursor: pointer; }
+.global-search :deep(.el-input__wrapper) { cursor: pointer; }
+@media (max-width: 768px) { .global-search { display: none; } }
+.search-results { margin-top: 10px; max-height: 320px; overflow-y: auto; }
+.search-item {
+  display: flex; align-items: center; gap: 10px; padding: 9px 12px;
+  border-radius: 6px; cursor: pointer; font-size: 14px;
+}
+.search-item:hover { background: var(--parchment-100, #f5f5f4); }
 </style>

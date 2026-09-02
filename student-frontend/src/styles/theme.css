@@ -140,3 +140,6 @@ body {
 ::-webkit-scrollbar-track {
   background: transparent;
 }
+/* M3-3 空状态统一：全站表格空数据区域加大留白 + 柔和文案色 */
+.el-table__empty-block { min-height: 120px; }
+.el-table__empty-text { color: var(--el-text-color-secondary); font-size: 13px; }
