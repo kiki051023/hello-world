@@ -10,7 +10,7 @@
       <el-table-column label="状态" width="90" align="center">
         <template #default="{ row }">
           <el-tag :type="{ DRAFT: 'info', SUBMITTED: 'warning', COMMENTED: 'success' }[row.status]">
-            {{ { DRAFT: '草稿', SUBMITTED: '已提交', COMMENTED: '已点评' }[row.status] }}
+            {{ logStatusLabel(row.status) }}
           </el-tag>
         </template>
       </el-table-column>
@@ -43,6 +43,12 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import { getLogPage, submitLog, commentLog } from '@/api/practice'
 import { useCanCommentLog } from '../composables'
+import { useDict } from '@/utils/dict'
+
+// M2-4：状态文案走字典 practice_log_status
+const { loadDict, labelOf } = useDict()
+loadDict('practice_log_status')
+const logStatusLabel = (s) => labelOf('practice_log_status', s)
 
 const canCommentLog = useCanCommentLog()
 

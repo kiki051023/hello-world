@@ -5,11 +5,7 @@
         <div class="toolbar">
           <span>成绩审核与学分</span>
           <el-select v-model="query.scoreStatus" placeholder="状态" clearable style="width: 140px;" @change="loadData">
-            <el-option label="草稿" value="DRAFT" />
-            <el-option label="已提交" value="SUBMITTED" />
-            <el-option label="已审核" value="APPROVED" />
-            <el-option label="已退回" value="REJECTED" />
-            <el-option label="已作废" value="VOID" />
+            <el-option v-for="o in scoreStatusOptions" :key="o.value" :label="o.label" :value="o.value" />
           </el-select>
         </div>
       </template>
@@ -113,6 +109,7 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useUserStore } from '@/store/user'
+import { useDict } from '@/utils/dict'
 import { getScorePage } from '@/api/score'
 import {
   submitScore, approveScore, rejectScore, voidScore,
@@ -131,11 +128,11 @@ const rows = ref([])
 const total = ref(0)
 const query = reactive({ current: 1, size: 10, scoreStatus: null })
 
-const STATUS_TEXT = {
-  DRAFT: '草稿', SUBMITTED: '已提交', APPROVED: '已审核', REJECTED: '已退回', VOID: '已作废'
-}
 const STATUS_TAG = { DRAFT: 'info', SUBMITTED: 'warning', APPROVED: 'success', REJECTED: 'danger', VOID: 'info' }
-const statusText = (s) => STATUS_TEXT[s] || s
+// M2-4：状态文案走字典 score_status（tag 颜色是视觉映射，保留本地）
+const { loadDict, labelOf } = useDict()
+const scoreStatusOptions = ref([])
+const statusText = (s) => labelOf('score_status', s)
 const statusTag = (s) => STATUS_TAG[s] || 'info'
 const canSubmit = (row) =>
   canWrite.value && ['DRAFT', 'REJECTED'].includes(row.scoreStatus)
@@ -207,7 +204,10 @@ async function showHistory(row) {
   historyDialogVisible.value = true
 }
 
-onMounted(loadData)
+onMounted(async () => {
+  scoreStatusOptions.value = await loadDict('score_status')
+  loadData()
+})
 </script>
 
 <style scoped>

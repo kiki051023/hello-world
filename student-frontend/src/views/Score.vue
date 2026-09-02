@@ -75,11 +75,7 @@
         </el-form-item>
         <el-form-item label="状态">
           <el-select v-model="queryForm.scoreStatus" placeholder="全部状态" clearable style="width: 130px;">
-            <el-option label="草稿" value="DRAFT" />
-            <el-option label="待审核" value="PENDING" />
-            <el-option label="已审核" value="APPROVED" />
-            <el-option label="已驳回" value="REJECTED" />
-            <el-option label="已作废" value="VOID" />
+            <el-option v-for="o in scoreStatusOptions" :key="o.value" :label="o.label" :value="o.value" />
           </el-select>
         </el-form-item>
         <el-form-item>
@@ -179,6 +175,7 @@ import { getCourseList } from '@/api/course'
 import { getClazzList } from '@/api/clazz'
 import { getStudentPage } from '@/api/student'
 import { listTerms } from '@/api/education'
+import { useDict } from '@/utils/dict'
 
 const loading = ref(false)
 const submitLoading = ref(false)
@@ -231,23 +228,23 @@ function getScoreTagType(score) {
   return 'danger'
 }
 
-const STATUS_MAP = {
-  DRAFT: { text: '草稿', type: 'info' },
-  PENDING: { text: '待审核', type: 'warning' },
-  APPROVED: { text: '已审核', type: 'success' },
-  REJECTED: { text: '已驳回', type: 'danger' },
-  VOID: { text: '已作废', type: 'info' }
+const STATUS_TAG = {
+  DRAFT: 'info', SUBMITTED: 'warning', APPROVED: 'success', REJECTED: 'danger', VOID: 'info'
 }
+// M2-4：状态文案走字典 score_status（tag 颜色是视觉映射，保留本地）
+const { loadDict, labelOf } = useDict()
+const scoreStatusOptions = ref([])
 
 function statusText(status) {
-  return STATUS_MAP[status]?.text || '未知'
+  return labelOf('score_status', status) || '未知'
 }
 
 function statusTagType(status) {
-  return STATUS_MAP[status]?.type || 'info'
+  return STATUS_TAG[status] || 'info'
 }
 
-onMounted(() => {
+onMounted(async () => {
+  scoreStatusOptions.value = await loadDict('score_status')
   loadCourseList()
   loadClazzList()
   loadTermList()

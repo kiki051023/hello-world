@@ -54,6 +54,12 @@ const routes = [
               component: () => import('@/views/system/termmanage/index.vue'),
               meta: { title: '学期管理', icon: 'Calendar', roles: ['ADMIN', 'EDUCATION_ADMIN'] }
             },
+            {
+              path: 'system/dict',
+              name: 'DictManage',
+              component: () => import('@/views/system/dictmanage/index.vue'),
+              meta: { title: '字典管理', icon: 'Collection', roles: ['ADMIN'] }
+            },
       {
         path: 'score-audit',
         name: 'ScoreAudit',
