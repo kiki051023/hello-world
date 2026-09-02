@@ -15,6 +15,9 @@ public class User implements Serializable {
     @TableId(type = IdType.AUTO)
     private Long id;
 
+    /** 邮箱（通知邮件渠道，M3-1） */
+    private String email;
+
     private String username;
 
     private String password;

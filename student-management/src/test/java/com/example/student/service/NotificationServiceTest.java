@@ -22,7 +22,7 @@ class NotificationServiceTest {
     @BeforeEach
     void setUp() {
         mapper = mock(NotificationMapper.class);
-        service = new NotificationServiceImpl();
+        service = new NotificationServiceImpl(mock(com.example.student.service.channel.NotifyChannelDispatcher.class));
         ReflectionTestUtils.setField(service, "baseMapper", mapper);
         when(mapper.insert(any(Notification.class))).thenReturn(1);
         when(mapper.selectCount(any())).thenReturn(0L);

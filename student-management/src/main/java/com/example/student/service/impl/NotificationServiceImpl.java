@@ -18,6 +18,12 @@ import java.time.LocalDateTime;
 public class NotificationServiceImpl extends ServiceImpl<NotificationMapper, Notification>
         implements NotificationService {
 
+    private final com.example.student.service.channel.NotifyChannelDispatcher channelDispatcher;
+
+    public NotificationServiceImpl(com.example.student.service.channel.NotifyChannelDispatcher channelDispatcher) {
+        this.channelDispatcher = channelDispatcher;
+    }
+
     @Override
     public IPage<Notification> getNotificationPage(Long current, Long size, Long receiverId,
                                                    Integer isRead) {
@@ -74,5 +80,7 @@ public class NotificationServiceImpl extends ServiceImpl<NotificationMapper, Not
         notification.setIsRead(0);
         notification.setCreateTime(LocalDateTime.now());
         save(notification);
+        // M3-1：站内信落库后 fan-out 外发渠道（邮件/企微），失败记日志待重试
+        channelDispatcher.dispatch(notification);
     }
 }

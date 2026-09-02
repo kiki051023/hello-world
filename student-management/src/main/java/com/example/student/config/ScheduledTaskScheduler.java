@@ -32,15 +32,18 @@ public class ScheduledTaskScheduler implements SchedulingConfigurer {
     private final ScheduledTaskLogMapper taskLogMapper;
     private final ScheduledTaskService taskService;
     private final DistributedCacheService cache;
+    private final com.example.student.service.channel.NotifyChannelDispatcher channelDispatcher;
 
     public ScheduledTaskScheduler(ScheduledTaskMapper taskMapper,
                                   ScheduledTaskLogMapper taskLogMapper,
                                   ScheduledTaskService taskService,
-                                  DistributedCacheService cache) {
+                                  DistributedCacheService cache,
+                                  com.example.student.service.channel.NotifyChannelDispatcher channelDispatcher) {
         this.taskMapper = taskMapper;
         this.taskLogMapper = taskLogMapper;
         this.taskService = taskService;
         this.cache = cache;
+        this.channelDispatcher = channelDispatcher;
     }
 
     @Override
@@ -99,6 +102,10 @@ public class ScheduledTaskScheduler implements SchedulingConfigurer {
             case "IMPORT_REAPER" -> {
                 int n = taskService.reapTimedOutImportTasks(30);
                 log.info("[IMPORT_REAPER] 回收超时导入任务 {} 个", n);
+            }
+            case "NOTIFY_CHANNEL_RETRY" -> {
+                int n = channelDispatcher.retryFailed(3);
+                log.info("[NOTIFY_CHANNEL_RETRY] 重试外发 {} 条", n);
             }
             default -> log.warn("[{}] 无对应任务实现，跳过", taskCode);
         }
