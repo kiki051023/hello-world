@@ -116,7 +116,22 @@
       </el-header>
 
       <el-main class="main-content">
-        <router-view />
+        <!-- M4-3 多标签页：访问过的页面缓存保活，标签可关/可刷新 -->
+        <div class="tabs-bar no-print">
+          <div v-for="t in tabs" :key="t.path"
+               :class="['tab', { active: t.path === route.path }]"
+               @click="router.push(t.path)">
+            <span>{{ t.title }}</span>
+            <el-icon v-if="tabs.length > 1" class="tab-close" @click.stop="closeTab(t)"><Close /></el-icon>
+          </div>
+        </div>
+        <router-view v-slot="{ Component }">
+          <!-- ponytail: 不带 include 全量缓存（页面 ~20 个，内存可控）；
+               script-setup 组件 name 与路由 name 不一致时 include 会静默失效 -->
+          <keep-alive>
+            <component :is="Component" :key="route.path" />
+          </keep-alive>
+        </router-view>
       </el-main>
     </el-container>
 
@@ -139,7 +154,7 @@
 </template>
 
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/store/user'
 import NotificationBell from '@/components/NotificationBell.vue'
@@ -164,7 +179,8 @@ import {
   House,
   Search,
   Sunny,
-  Moon
+  Moon,
+  Close
 } from '@element-plus/icons-vue'
 import { logout } from '@/api/auth'
 import ChangePasswordDrawer from '@/components/ChangePasswordDrawer.vue'
@@ -281,6 +297,22 @@ function toggleDark() {
   isDark.value = !isDark.value
   localStorage.setItem('theme-dark', isDark.value ? '1' : '0')
   applyDark()
+}
+
+// ============ M4-3 多标签页 ============
+const tabs = ref([{ path: '/dashboard', title: '首页' }])
+watch(() => route.path, (p) => {
+  if (p === '/login') return
+  if (!tabs.value.some((t) => t.path === p)) {
+    tabs.value.push({ path: p, title: route.meta.title || p })
+  }
+})
+function closeTab(t) {
+  const i = tabs.value.findIndex((x) => x.path === t.path)
+  tabs.value.splice(i, 1)
+  if (route.path === t.path) {
+    router.push(tabs.value[Math.max(0, i - 1)].path)
+  }
 }
 
 onMounted(() => {
@@ -554,6 +586,18 @@ function handleCommand(command) {
 /* M4-1 暗色切换 */
 .theme-toggle { margin-right: 12px; cursor: pointer; font-size: 17px; color: var(--ink-muted); }
 .theme-toggle:hover { color: var(--brass-500); }
+
+/* M4-3 多标签页 */
+.tabs-bar { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 10px; }
+.tab {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 12px; font-size: 12px; border-radius: 4px;
+  border: 1px solid var(--el-border-color); cursor: pointer;
+  color: var(--el-text-color-secondary); background: var(--el-fill-color-blank);
+}
+.tab.active { color: var(--brass-600); border-color: var(--line-gold); }
+.tab-close { font-size: 12px; }
+.tab-close:hover { color: var(--el-color-error); }
 .search-results { margin-top: 10px; max-height: 320px; overflow-y: auto; }
 .search-item {
   display: flex; align-items: center; gap: 10px; padding: 9px 12px;
