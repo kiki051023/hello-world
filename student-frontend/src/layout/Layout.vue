@@ -218,6 +218,7 @@ const allMenus = [
   { index: '/system/dict', title: '字典管理', icon: Collection, roles: ['ADMIN'] },
   { index: '/system/dorm', title: '宿舍管理', icon: House, roles: ['ADMIN'] },
   { index: '/portal', title: '我的门户', icon: User, roles: ['STUDENT'] },
+  { index: '/timetable', title: '我的课表', icon: Calendar, roles: ['ADMIN', 'EDUCATION_ADMIN', 'DEPARTMENT_LEADER', 'COUNSELOR', 'TEACHER', 'STUDENT'] },
   { index: '/analysis', title: '成绩分析', icon: TrendCharts, roles: ['ADMIN', 'TEACHER', 'STUDENT'] },
   { index: '/teacher', title: '教师管理', icon: Avatar, roles: ['ADMIN'] }
 ]
@@ -234,7 +235,7 @@ const menuGroups = [
   {
     title: '教务中心',
     icon: Calendar,
-    items: ['/score', '/system/terms', '/score-audit', '/education'].map((i) => byIndex[i])
+    items: ['/score', '/system/terms', '/score-audit', '/education', '/timetable'].map((i) => byIndex[i])
   },
   {
     title: '学务中心',

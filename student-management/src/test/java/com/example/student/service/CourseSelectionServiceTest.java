@@ -100,6 +100,17 @@ class CourseSelectionServiceTest {
     }
 
     @Test
+    void selectRejectsTimeConflict() {
+        openTerm(30, 5);
+        when(mapper.selectCount(any())).thenReturn(5L, 0L);
+        // M4-2：时间槽冲突 → 拒绝
+        when(mapper.countTimeConflict(10L, 100L)).thenReturn(1L);
+        BusinessException e = assertThrows(BusinessException.class, () -> service.select(selection(10L)));
+        assertEquals("该时间段与已选课程冲突", e.getMessage());
+        verify(mapper, never()).insert(any());
+    }
+
+    @Test
     void cancelDeniedWhenNotSelfAndNoScope() {
         CourseSelection existing = selection(99L);
         existing.setId(7L);

@@ -31,6 +31,11 @@ public class TeachingTask implements Serializable {
     @TableLogic
     private Integer deleted;
 
+    /** M4-2 课表时间槽（可选，空则不参与冲突检测与课表渲染） */
+    private Integer weekDay;
+    private String period;
+    private String classroom;
+
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createTime;
 

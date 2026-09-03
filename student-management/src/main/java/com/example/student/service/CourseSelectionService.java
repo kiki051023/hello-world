@@ -13,4 +13,7 @@ public interface CourseSelectionService extends IService<CourseSelection> {
     void select(CourseSelection selection);
 
     void cancel(Long id);
+
+    /** M4-2 学生周课表（学生看本人，管理端可指定 studentId） */
+    java.util.List<java.util.Map<String, Object>> studentTimetable(Long studentId);
 }

@@ -73,6 +73,11 @@ public class CourseSelectionServiceImpl extends ServiceImpl<CourseSelectionMappe
                 .eq(CourseSelection::getStudentId, resolvedStudentId));
         if (exists != null && exists > 0) throw new BusinessException("该生已选择此课程");
 
+        // M4-2：时间冲突检测（目标课程与已选课程同时间槽即拒）
+        if (baseMapper.countTimeConflict(resolvedStudentId, selection.getCourseTermId()) > 0) {
+            throw new BusinessException("该时间段与已选课程冲突");
+        }
+
         selection.setStudentId(resolvedStudentId);
         if (selection.getSelectionType() == null) selection.setSelectionType("NORMAL");
         selection.setStatus(1);
@@ -90,5 +95,12 @@ public class CourseSelectionServiceImpl extends ServiceImpl<CourseSelectionMappe
         if (!self && !dataScopeService.canAccessStudent(student))
             throw new org.springframework.security.access.AccessDeniedException("无权取消该选课");
         baseMapper.deleteById(id);
+    }
+
+    @Override
+    public java.util.List<java.util.Map<String, Object>> studentTimetable(Long studentId) {
+        Long resolved = studentDataScopeService.resolveStudentId(studentId);
+        if (resolved == null) throw new BusinessException("学号不能为空");
+        return baseMapper.selectStudentTimetable(resolved);
     }
 }

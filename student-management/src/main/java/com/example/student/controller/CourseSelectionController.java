@@ -39,6 +39,14 @@ public class CourseSelectionController {
         return Result.success();
     }
 
+    @Operation(summary = "学生周课表（M4-2，学生看本人）")
+    @PreAuthorize("hasAnyRole('ADMIN','EDUCATION_ADMIN','DEPARTMENT_LEADER','COUNSELOR','TEACHER','STUDENT')")
+    @GetMapping("/timetable")
+    public Result<java.util.List<java.util.Map<String, Object>>> timetable(
+            @RequestParam(required = false) Long studentId) {
+        return Result.success(courseSelectionService.studentTimetable(studentId));
+    }
+
     @Operation(summary = "退选")
     @PreAuthorize("hasAnyRole('ADMIN','EDUCATION_ADMIN','TEACHER','STUDENT')")
     @DeleteMapping("/{id}")

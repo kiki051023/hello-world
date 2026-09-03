@@ -72,6 +72,12 @@ const routes = [
               component: () => import('@/views/portal/index.vue'),
               meta: { title: '我的门户', icon: 'User', roles: ['STUDENT'] }
             },
+            {
+              path: 'timetable',
+              name: 'Timetable',
+              component: () => import('@/views/education/timetable.vue'),
+              meta: { title: '我的课表', icon: 'Calendar', roles: ['ADMIN', 'EDUCATION_ADMIN', 'DEPARTMENT_LEADER', 'COUNSELOR', 'TEACHER', 'STUDENT'] }
+            },
       {
         path: 'score-audit',
         name: 'ScoreAudit',
