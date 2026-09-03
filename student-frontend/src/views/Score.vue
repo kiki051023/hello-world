@@ -26,6 +26,8 @@
           <span>成绩管理</span>
           <el-button type="primary" :icon="Plus" @click="handleAdd">录入成绩</el-button>
           <el-button v-if="userStore.role === 'ADMIN'" type="success" :icon="Download" @click="handleExport">导出</el-button>
+          <!-- M4-4 打印成绩单（学生本人/教师均可，浏览器 window.print，不引库） -->
+          <el-button :icon="Printer" class="no-print" @click="handlePrint">打印</el-button>
           <el-upload
             v-if="userStore.role === 'ADMIN'"
             :auto-upload="false"
@@ -84,6 +86,7 @@
         </el-form-item>
       </el-form>
 
+      <div class="print-area">
       <el-table :data="tableData" v-loading="loading" border stripe>
         <el-table-column type="index" label="序号" width="60" align="center" />
         <el-table-column prop="studentNo" label="学号" width="120" align="center" />
@@ -107,6 +110,7 @@
           </template>
         </el-table-column>
       </el-table>
+      </div>
 
       <el-pagination
         class="pagination"
@@ -169,7 +173,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useUserStore } from '@/store/user'
-import { Plus, Search, Refresh, Edit, Delete, Download, Upload } from '@element-plus/icons-vue'
+import { Plus, Search, Refresh, Edit, Delete, Download, Upload, Printer } from '@element-plus/icons-vue'
 import { getScorePage, addScore, updateScore, deleteScore, getScoreStats, exportScore, importScore, exportScoreImportFail } from '@/api/score'
 import { getCourseList } from '@/api/course'
 import { getClazzList } from '@/api/clazz'
@@ -345,6 +349,10 @@ function downloadBlob(blob, filename) {
   URL.revokeObjectURL(url)
 }
 
+function handlePrint() {
+  window.print()
+}
+
 function handleExport() {
   exportScore(queryForm).then(res => {
     downloadBlob(res.data, '成绩信息.xlsx')
@@ -460,5 +468,13 @@ function handleDialogClose() {
   margin-top: 20px;
   justify-content: flex-end;
   display: flex;
+}
+
+/* M4-4 打印成绩单：只留表格，隐藏筛选/按钮/分页/侧栏 */
+@media print {
+  .no-print, .pagination, .page-header, .search-form, .filter-card,
+  .sidebar, .header, .el-drawer, .collapse-btn { display: none !important; }
+  .main-content { padding: 0 !important; }
+  .print-area { display: block !important; }
 }
 </style>
