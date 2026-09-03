@@ -13,8 +13,9 @@ public interface DictService extends IService<DictType> {
     /** 类型分页（可按名称/类型模糊） */
     IPage<DictType> getTypePage(Long current, Long size, String keyword);
 
-    /** 某类型下启用数据（sort 升序），前端下拉/翻译用 */
-    List<DictData> listEnabledData(String dictType);
+    /** 某类型下启用数据（sort 升序），前端下拉/翻译用。
+     *  返回 Map 投影而非实体：结果走 Redis JSON 缓存，实体类型在往返后丢失。 */
+    List<java.util.Map<String, Object>> listEnabledData(String dictType);
 
     /** 数据分页 */
     IPage<DictData> getDataPage(Long current, Long size, String dictType);

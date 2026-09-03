@@ -139,13 +139,13 @@ public class DistributedCacheService {
         localCache.keySet().removeIf(k -> k.startsWith(keyPrefix));
     }
 
-    // 简易序列化：数字与字符串直接存，其余 JSON
+    // 简易序列化：数字与字符串直接存，其余 JSON；序列化失败抛错（不存垃圾 toString）
     private String serialize(Object v) {
         if (v instanceof Number || v instanceof String || v instanceof Boolean) return String.valueOf(v);
         try {
             return new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(v);
         } catch (Exception e) {
-            return String.valueOf(v);
+            throw new IllegalStateException("cache serialize failed: " + e.getMessage(), e);
         }
     }
 

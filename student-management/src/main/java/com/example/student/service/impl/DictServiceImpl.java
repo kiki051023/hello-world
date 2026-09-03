@@ -48,17 +48,26 @@ public class DictServiceImpl extends ServiceImpl<DictTypeMapper, DictType> imple
     }
 
     @Override
-    public List<DictData> listEnabledData(String dictType) {
-        Object cached = cache.getOrLoad(CACHE_KEY + dictType, CACHE_TTL, k -> {
+    @SuppressWarnings("unchecked")
+    public List<java.util.Map<String, Object>> listEnabledData(String dictType) {
+        // 缓存 List<Map> 投影：Redis JSON 往返与本地缓存同构，前端只消费 dictValue/dictLabel
+        return (List<java.util.Map<String, Object>>) cache.getOrLoad(CACHE_KEY + dictType, CACHE_TTL, k -> {
             log.debug("dict cache miss: {}", dictType);
             return dictDataMapper.selectList(new LambdaQueryWrapper<DictData>()
                     .eq(DictData::getDictType, dictType)
                     .eq(DictData::getStatus, 1)
-                    .orderByAsc(DictData::getSort));
+                    .orderByAsc(DictData::getSort))
+                    .stream().map(d -> {
+                        java.util.Map<String, Object> m = new java.util.LinkedHashMap<String, Object>();
+                        m.put("id", d.getId());
+                        m.put("dictType", d.getDictType());
+                        m.put("dictValue", d.getDictValue());
+                        m.put("dictLabel", d.getDictLabel());
+                        m.put("sort", d.getSort());
+                        m.put("status", d.getStatus());
+                        return m;
+                    }).toList();
         });
-        // ponytail: Redis 往返把 List<DictData> 反序列化成 List<Map>，
-        // 前端只消费 dictValue/dictLabel 字段，结构同构，不再转回实体。
-        return (List<DictData>) cached;
     }
 
     @Override

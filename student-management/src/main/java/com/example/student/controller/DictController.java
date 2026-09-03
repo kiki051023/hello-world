@@ -15,6 +15,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
 /**
  * 数据字典（M2-1）：管理端 CRUD（ADMIN）+ 公开查询（任何登录用户拉取下拉/翻译）。
@@ -32,7 +34,7 @@ public class DictController {
     @Operation(summary = "某类型下启用字典数据（下拉源）")
     @PreAuthorize("isAuthenticated()")
     @GetMapping("/data/list/{dictType}")
-    public Result<List<DictData>> listEnabledData(@PathVariable String dictType) {
+    public Result<List<Map<String, Object>>> listEnabledData(@PathVariable String dictType) {
         return Result.success(dictService.listEnabledData(dictType));
     }
 

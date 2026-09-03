@@ -79,6 +79,7 @@ public class ClazzServiceImpl extends ServiceImpl<ClazzMapper, Clazz> implements
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public List<Clazz> getAllClazz() {
         // SQL 级数据范围过滤；按 scope 摘要缓存 5 分钟（M2-2）
         DataScopeFilter scope = currentScope();
@@ -86,9 +87,31 @@ public class ClazzServiceImpl extends ServiceImpl<ClazzMapper, Clazz> implements
                 : "u=" + scope.getUserId() + "|all=" + scope.isUnrestricted()
                 + "|self=" + scope.isSelfOnly() + "|d=" + scope.getDepartmentId()
                 + (scope.hasClassIds() ? "|c=" + scope.getClassIds().stream().sorted().toList() : ""));
-        Object cached = cache.getOrLoad(key, CLAZZ_CACHE_TTL, k -> baseMapper.selectScoped(scope));
-        // ponytail: Redis 往返实体→Map，ClazzDTO 映射只读标量字段，结构同构
-        return (List<Clazz>) cached;
+        // 缓存存 Map 投影（Redis JSON 往返丢实体类型），读出后重建实体
+        List<java.util.Map<String, Object>> rows = (List<java.util.Map<String, Object>>)
+                cache.getOrLoad(key, CLAZZ_CACHE_TTL, k -> baseMapper.selectScoped(scope)
+                        .stream().map(this::toCacheRow).toList());
+        return rows.stream().map(this::fromCacheRow).toList();
+    }
+
+    private java.util.Map<String, Object> toCacheRow(Clazz c) {
+        java.util.Map<String, Object> m = new java.util.LinkedHashMap<>();
+        m.put("id", c.getId());
+        m.put("clazzName", c.getClazzName());
+        m.put("grade", c.getGrade());
+        m.put("headTeacherId", c.getHeadTeacherId());
+        m.put("departmentId", c.getDepartmentId());
+        return m;
+    }
+
+    private Clazz fromCacheRow(java.util.Map<String, Object> m) {
+        Clazz c = new Clazz();
+        c.setId(m.get("id") == null ? null : ((Number) m.get("id")).longValue());
+        c.setClazzName((String) m.get("clazzName"));
+        c.setGrade((String) m.get("grade"));
+        c.setHeadTeacherId(m.get("headTeacherId") == null ? null : ((Number) m.get("headTeacherId")).longValue());
+        c.setDepartmentId(m.get("departmentId") == null ? null : ((Number) m.get("departmentId")).longValue());
+        return c;
     }
 
     @Override
