@@ -143,3 +143,54 @@ body {
 /* M3-3 空状态统一：全站表格空数据区域加大留白 + 柔和文案色 */
 .el-table__empty-block { min-height: 120px; }
 .el-table__empty-text { color: var(--el-text-color-secondary); font-size: 13px; }
+
+/* ============ M4-1 暗色主题：.dark 挂在 <html>，token 翻转 ============ */
+/* 羊皮纸在暗色下翻转为深墨阶，EP 填充/边框/文字同步压暗 */
+html.dark {
+  --parchment-50:  #1b2230;
+  --parchment-100: #141a24;
+  --parchment-200: #1b2230;
+  --parchment-300: #2a3444;
+
+  --ink-text:  #e8e4da;
+  --ink-muted: #9a937f;
+
+  --line-light: #2a3444;
+
+  --el-bg-color: #1b2230;
+  --el-bg-color-page: #0e1116;
+  --el-bg-color-overlay: #232c3d;
+
+  --el-text-color-primary: #e8e4da;
+  --el-text-color-regular: #c8c2b4;
+  --el-text-color-secondary: #9a937f;
+  --el-text-color-placeholder: #6b6658;
+
+  --el-border-color: #2a3444;
+  --el-border-color-light: #232c3d;
+  --el-border-color-lighter: #1f2735;
+  --el-border-color-extra-light: #1b2230;
+
+  --el-fill-color: #232c3d;
+  --el-fill-color-light: #1f2735;
+  --el-fill-color-lighter: #1b2230;
+  --el-fill-color-blank: #141a24;
+
+  /* 表格行底色 */
+  --el-table-tr-bg-color: #141a24;
+  --el-table-row-hover-bg-color: #1f2735;
+  --el-table-header-bg-color: #1b2230;
+}
+
+html.dark body {
+  background-color: #0e1116;
+  color: var(--ink-text);
+}
+
+/* 暗色下滚动条 */
+html.dark ::-webkit-scrollbar-thumb {
+  background: #2a3444;
+}
+html.dark ::-webkit-scrollbar-thumb:hover {
+  background: #c9a227;
+}

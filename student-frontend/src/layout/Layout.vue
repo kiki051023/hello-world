@@ -94,6 +94,10 @@
           <!-- M3-3 全局搜索：Ctrl+K / 点击输入框 -->
           <el-input class="global-search" placeholder="搜索页面 (Ctrl+K)" readonly :prefix-icon="Search"
                     @click="searchVisible = true" />
+          <!-- M4-1 暗色切换 -->
+          <el-icon class="theme-toggle" :title="isDark ? '切到亮色' : '切到暗色'" @click="toggleDark">
+            <Sunny v-if="isDark" /><Moon v-else />
+          </el-icon>
           <NotificationBell />
           <el-dropdown @command="handleCommand">
             <span class="user-info">
@@ -158,7 +162,9 @@ import {
   Fold,
   Collection,
   House,
-  Search
+  Search,
+  Sunny,
+  Moon
 } from '@element-plus/icons-vue'
 import { logout } from '@/api/auth'
 import ChangePasswordDrawer from '@/components/ChangePasswordDrawer.vue'
@@ -266,8 +272,20 @@ function onGlobalKey(e) {
   }
 }
 
+// ============ M4-1 暗色主题 ============
+const isDark = ref(localStorage.getItem('theme-dark') === '1')
+function applyDark() {
+  document.documentElement.classList.toggle('dark', isDark.value)
+}
+function toggleDark() {
+  isDark.value = !isDark.value
+  localStorage.setItem('theme-dark', isDark.value ? '1' : '0')
+  applyDark()
+}
+
 onMounted(() => {
   userStore.loadUserInfo()
+  applyDark()
   // 移动端断点监听：<768px 隐藏侧栏（改用抽屉）
   checkViewport()
   window.addEventListener('resize', checkViewport)
@@ -533,6 +551,9 @@ function handleCommand(command) {
 .global-search { width: 180px; margin-right: 12px; cursor: pointer; }
 .global-search :deep(.el-input__wrapper) { cursor: pointer; }
 @media (max-width: 768px) { .global-search { display: none; } }
+/* M4-1 暗色切换 */
+.theme-toggle { margin-right: 12px; cursor: pointer; font-size: 17px; color: var(--ink-muted); }
+.theme-toggle:hover { color: var(--brass-500); }
 .search-results { margin-top: 10px; max-height: 320px; overflow-y: auto; }
 .search-item {
   display: flex; align-items: center; gap: 10px; padding: 9px 12px;
