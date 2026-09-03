@@ -180,9 +180,11 @@ import {
   Search,
   Sunny,
   Moon,
-  Close
+  Close,
+  Menu
 } from '@element-plus/icons-vue'
 import { logout } from '@/api/auth'
+import { getMyMenus } from '@/api/menu'
 import ChangePasswordDrawer from '@/components/ChangePasswordDrawer.vue'
 
 const route = useRoute()
@@ -225,37 +227,34 @@ const allMenus = [
 
 const byIndex = Object.fromEntries(allMenus.map((m) => [m.index, m]))
 
-// 导航分组：单页组直接平铺，多页组折叠
-const menuGroups = [
-  {
-    title: '总览',
-    icon: HomeFilled,
-    items: ['/dashboard', '/portal', '/analysis'].map((i) => byIndex[i])
-  },
-  {
-    title: '教务中心',
-    icon: Calendar,
-    items: ['/score', '/system/terms', '/score-audit', '/education', '/timetable'].map((i) => byIndex[i])
-  },
-  {
-    title: '学务中心',
-    icon: User,
-    items: ['/student', '/clazz', '/course', '/teacher', '/affairs', '/practice'].map((i) => byIndex[i])
-  },
-  {
-    title: '系统',
-    icon: Monitor,
-    items: ['/ops', '/system/org', '/system/users', '/system/roles', '/system/dict', '/system/dorm'].map((i) => byIndex[i]),
-    alwaysSub: true
-  }
+// M4-6 动态菜单：拉 /system/menu/my 覆盖静态 allMenus（失败/空则回退静态）
+// 图标名 → 组件映射（DB 存字符串）
+const iconMap = { HomeFilled, User, OfficeBuilding, Reading, DataAnalysis, Avatar, TrendCharts,
+  Calendar, Checked, Notebook, Suitcase, Monitor, Collection, House }
+const dynamicMenus = ref([])
+const menuSource = computed(() => (dynamicMenus.value.length ? dynamicMenus.value : allMenus))
+
+// 导航分组：单页组直接平铺，多页组折叠（items 为路径清单，渲染时从 menuSource 解析）
+const menuGroupPaths = [
+  { title: '总览', icon: HomeFilled, paths: ['/dashboard', '/portal', '/analysis'] },
+  { title: '教务中心', icon: Calendar, paths: ['/score', '/system/terms', '/score-audit', '/education', '/timetable'] },
+  { title: '学务中心', icon: User, paths: ['/student', '/clazz', '/course', '/teacher', '/affairs', '/practice'] },
+  { title: '系统', icon: Monitor, paths: ['/ops', '/system/org', '/system/users', '/system/roles', '/system/dict', '/system/dorm'], alwaysSub: true }
 ]
 
-const visibleGroups = computed(() =>
-  menuGroups
-    .map((g) => ({ ...g, items: g.items.filter((m) => m && Array.isArray(m.roles) && m.roles.includes(userStore.role)) }))
+const visibleGroups = computed(() => {
+  const source = Object.fromEntries(menuSource.value.map((m) => [m.index ?? m.path, m]))
+  return menuGroupPaths
+    .map((g) => ({
+      ...g,
+      items: g.paths.map((p) => source[p]).filter(Boolean)
+        .filter((m) => {
+          const roles = m.roles
+          return Array.isArray(roles) ? roles.includes(userStore.role) : String(roles).split(',').includes(userStore.role)
+        })
+    }))
     .filter((g) => g.items.length > 0)
-)
-
+})
 // 当前路由所在组自动展开
 const openGroups = computed(() =>
   visibleGroups.value
@@ -316,9 +315,20 @@ function closeTab(t) {
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
   userStore.loadUserInfo()
   applyDark()
+  // M4-6 拉动态菜单（映射为静态形状；失败/空回退静态 allMenus）
+  try {
+    const res = await getMyMenus()
+    if (res.data?.length) {
+      dynamicMenus.value = res.data.map((m) => ({
+        index: m.path, title: m.title,
+        icon: iconMap[m.icon] || Menu,
+        roles: String(m.roles).split(',')
+      }))
+    }
+  } catch { /* 回退静态 */ }
   // 移动端断点监听：<768px 隐藏侧栏（改用抽屉）
   checkViewport()
   window.addEventListener('resize', checkViewport)
