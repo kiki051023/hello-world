@@ -356,7 +356,7 @@ A: 可在 Maven 的 `settings.xml` 中配置阿里云镜像：
 
 ## 许可证
 
-MIT License
+[MIT License](./LICENSE)
 
 ---
 
