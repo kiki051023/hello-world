@@ -22,6 +22,7 @@ student-frontend/node_modules/
 student-frontend/dist/
 student-frontend/.vite/
 student-frontend/stats.html
+student-frontend/vite.config.js.timestamp-*
 
 # ===== 智能体工作区数据 =====
 .workbuddy/
