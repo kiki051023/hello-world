@@ -3,6 +3,8 @@ import vue from '@vitejs/plugin-vue'
 import { resolve } from 'path'
 
 export default defineConfig({
+  // 相对路径 base，使构建产物在 GitHub Pages 子路径下也能正确加载资源
+  base: './',
   plugins: [vue()],
   resolve: {
     alias: {

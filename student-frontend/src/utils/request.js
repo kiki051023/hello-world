@@ -3,7 +3,8 @@ import { ElMessage } from 'element-plus'
 import router from '@/router'
 
 const request = axios.create({
-  baseURL: '/api',
+  // 生产环境通过 VITE_API_BASE_URL 指向后端公网地址；本地/未配置时回退到 /api（由 Vite 代理）
+  baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
   timeout: 10000
 })
 
