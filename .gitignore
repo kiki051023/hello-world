@@ -39,3 +39,7 @@ student-management/logs/
 
 # ===== 数据库备份（backup-db.bat 产出到 backups/）=====
 backups/
+
+# ===== 个人简历 / 项目经历（含个人信息，不纳入仓库）=====
+学生管理系统-项目经历.md
+简历项目经历-纯文本.txt
